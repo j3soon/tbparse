@@ -28,3 +28,13 @@ jobs:
         pip install tox tox-gh-actions
     - name: Test with tox
       run: tox
+    - name: Prepare code coverage data
+      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == 3.9
+      run: |
+        pip install pandas tensorflow torch tensorboardX pytest pytest-cov
+        pytest --cov=./ --cov-report xml
+    - name: Upload coverage to Codecov
+      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == 3.9
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
