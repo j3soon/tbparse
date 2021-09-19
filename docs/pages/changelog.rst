@@ -7,7 +7,7 @@ v0.0.2
 
 Fixes:
 
-* Fix PyPI release issue
+* Fix PyPI packaging issue
 
 v0.0.1
 ===================================

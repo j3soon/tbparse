@@ -3,20 +3,31 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+github_url = "https://github.com/j3soon/tbparse"
+
 setuptools.setup(
     name="tbparse",
     version="0.0.2",
     author="Johnson",
     author_email="j3.soon@msa.hinet.net",
-    description="A simple parser for reading tensorboard logs",
+    description="Read, parse, and plot tensorboard event logs with ease!",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/j3soon/tbparse",
+    url=github_url,
     project_urls={
-        "Bug Tracker": "https://github.com/j3soon/tbparse/issues",
+        'Changelog': f'{github_url}/blob/master/docs/pages/changelog.rst',
+        'Issues': f'{github_url}/issues',
+        'Source Code': github_url,
     },
+    keywords=(
+        'package, parser, plot, python, pytorch, reader, tensorboard, tensorboardx, tensorflow'
+    ),
     classifiers=[
-        "Programming Language :: Python :: 3",
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

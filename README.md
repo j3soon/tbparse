@@ -2,6 +2,9 @@
 
 [![tests](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml/badge.svg?branch=master&event=push)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
 [![build](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
+[![doc](https://readthedocs.org/projects/tbparse/badge/?version=latest)](https://tbparse.readthedocs.io/en/latest/?badge=latest)
+[![pypi](https://img.shields.io/pypi/v/tbparse)](https://pypi.org/project/tbparse/)
+[![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/)
 
 Read, parse, and plot tensorboard event logs with ease!
 
@@ -9,7 +12,9 @@ tbparse is a simple parser for reading tensorboard logs. It supports logs genera
 
 Currently, tbparse enables parsing native types (scalars, tensors, histograms, etc.) easily. More event types will be supported in future versions.
 
-![preview](docs/images/preview.png)
+See [the Documentation](https://tbparse.readthedocs.io) for usage details and API reference.
+
+![](docs/images/preview.png)
 
 ## Installation
 
