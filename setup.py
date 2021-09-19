@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="tbparse",
-    version="0.0.1",
+    version="0.0.2",
     author="Johnson",
     author_email="j3.soon@msa.hinet.net",
     description="A simple parser for reading tensorboard logs",
@@ -20,8 +20,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "tbparse"},
-    packages=setuptools.find_packages(where="tbparse"),
+    package_dir={"": "."},
+    packages=setuptools.find_packages(where=".", exclude=("tests*",)),
     python_requires=">=3.7",
     install_requires=[
         'pandas>=1.3.0',

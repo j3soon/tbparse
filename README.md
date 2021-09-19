@@ -1,7 +1,7 @@
 # tbparse
 
 [![tests](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml/badge.svg?branch=master&event=push)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
-[![build](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg?branch=master&event=push)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
+[![build](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
 
 Read, parse, and plot tensorboard event logs with ease!
 
