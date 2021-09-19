@@ -24,6 +24,7 @@ pip install tbparse
 ```py
 from tbparse import SummaryReader
 log_dir = "<PATH_TO_EVENT_FILE>"
-df = SummaryReader(log_dir).scalars
+reader = SummaryReader(log_dir)
+df = reader.scalars
 print(df)
 ```
