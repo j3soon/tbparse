@@ -20,7 +20,7 @@ See [the Documentation](https://tbparse.readthedocs.io) for usage details and AP
 ## Installation
 
 ```sh
-pip install tbparse
+pip install -U tbparse
 ```
 
 (Requires python >= 3.7)
