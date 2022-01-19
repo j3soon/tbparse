@@ -140,7 +140,7 @@ We can load a single event file.
    >>> reader.tensors['y=2x+C'].to_list() # as list
    [0.0, 2.0, 4.0]
 
-   >>> reader = SummaryReader(event_file, cols={'tag'}) # as raw event style
+   >>> reader = SummaryReader(event_file, columns={'tag'}) # as raw event style
    >>> reader.tensors
       step     tag  value
    0     0  y=2x+C    0.0
@@ -173,7 +173,7 @@ We can further load all runs under the root log directory.
    0     0  [0.0, 1.0]  [0.0, 1.0]
    1     1  [2.0, 3.0]  [3.0, 4.0]
    2     2  [4.0, 5.0]  [6.0, 7.0]
-   >>> reader = SummaryReader(log_dir, cols={'dir_name'}) # with event dir name
+   >>> reader = SummaryReader(log_dir, columns={'dir_name'}) # with event dir name
    >>> reader.tensors
       step  y=2x+C  y=3x+C dir_name
    0     0     0.0     0.0     run0
@@ -188,7 +188,7 @@ We can further load all runs under the root log directory.
    0     0     0.0     0.0     run0
    1     1     2.0     3.0     run0
    2     2     4.0     6.0     run0
-   >>> reader = SummaryReader(log_dir, cols={'tag', 'dir_name'}) # as raw event style
+   >>> reader = SummaryReader(log_dir, columns={'tag', 'dir_name'}) # as raw event style
    >>> reader.tensors
        step     tag  value dir_name
    0      0  y=2x+C    0.0     run0
@@ -219,7 +219,7 @@ If you are dealing with more sophisticated plots that require advanced
 filtering not shown in this page,
 you might want to refer to the following guides:
 
-* More column options: the `cols` option in :class:`tbparse.SummaryReader`
+* More column options: the `columns` option in :class:`tbparse.SummaryReader`
 * :std:doc:`Indexing and selecting data <pandas:user_guide/indexing>`
 * :std:doc:`MultiIndex / advanced indexing <pandas:user_guide/advanced>`
 * Filtering with RegEx: the `regex` option in :meth:`pandas.Series.str.contains`
@@ -231,7 +231,7 @@ Plotting with matplotlib
    :context: close-figs
 
    import matplotlib.pyplot as plt
-   reader = SummaryReader(log_dir, cols={'dir_name'})
+   reader = SummaryReader(log_dir, columns={'dir_name'})
    df = reader.tensors
    df = df.loc[df['dir_name'] == 'run0']
    plt.plot(df['step'], df['y=2x+C'])
@@ -245,7 +245,7 @@ Plotting with matplotlib
    :context: close-figs
 
    import matplotlib.pyplot as plt
-   reader = SummaryReader(log_dir, cols={'dir_name'})
+   reader = SummaryReader(log_dir, columns={'dir_name'})
    df = reader.tensors
    run0 = df.loc[df['dir_name'] == 'run0', ['step', 'y=2x+C']]
    run1 = df.loc[df['dir_name'] == 'run1', ['step', 'y=2x+C']]
@@ -263,7 +263,7 @@ Plotting with seaborn
    :context: close-figs
 
    import seaborn as sns
-   reader = SummaryReader(log_dir, cols={'tag', 'dir_name'})
+   reader = SummaryReader(log_dir, columns={'tag', 'dir_name'})
    df = reader.tensors
    df = df.loc[df['dir_name'] == 'run0']
    g = sns.lineplot(data=df, x='step', y='value', hue='tag')
@@ -273,7 +273,7 @@ Plotting with seaborn
    :context: close-figs
 
    import seaborn as sns
-   reader = SummaryReader(log_dir, cols={'dir_name'})
+   reader = SummaryReader(log_dir, columns={'dir_name'})
    df = reader.tensors
    g = sns.lineplot(data=df, x='step', y='y=2x+C', hue='dir_name')
    g.set(title='y=2x+C')
@@ -282,7 +282,7 @@ Plotting with seaborn
    :context: close-figs
 
    import seaborn as sns
-   reader = SummaryReader(log_dir, cols={'tag', 'dir_name'})
+   reader = SummaryReader(log_dir, columns={'tag', 'dir_name'})
    df = reader.tensors
    g = sns.lineplot(data=df, x='step', y='value', hue='tag')
    g.set(title='confidence interval of multiple runs')
@@ -293,7 +293,7 @@ Plotting with pandas
 .. plot::
    :context: close-figs
 
-   reader = SummaryReader(log_dir, cols={'dir_name'})
+   reader = SummaryReader(log_dir, columns={'dir_name'})
    df = reader.tensors
    df.set_index('step', inplace=True)
    df = df.loc[df['dir_name'] == 'run0']
@@ -302,7 +302,7 @@ Plotting with pandas
 .. plot::
    :context: close-figs
 
-   reader = SummaryReader(log_dir, cols={'dir_name'})
+   reader = SummaryReader(log_dir, columns={'dir_name'})
    df = reader.tensors
    run0 = df.loc[df['dir_name'] == 'run0', ['step', 'y=2x+C']].rename(columns={'y=2x+C': 'run0'})
    run1 = df.loc[df['dir_name'] == 'run1', ['step', 'y=2x+C']].rename(columns={'y=2x+C': 'run1'})

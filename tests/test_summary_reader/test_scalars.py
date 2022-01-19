@@ -57,8 +57,8 @@ def test_tensorboardX(prepare, testdir):
     df_tbx = SummaryReader(log_dir_tbx).scalars
     assert(df_th.equals(df_tbx))
     # (dir_name) Parse & Compare
-    df_th = SummaryReader(log_dir_th, cols={'dir_name'}).scalars
-    df_tbx = SummaryReader(log_dir_tbx, cols={'dir_name'}).scalars
+    df_th = SummaryReader(log_dir_th, columns={'dir_name'}).scalars
+    df_tbx = SummaryReader(log_dir_tbx, columns={'dir_name'}).scalars
     for i in range(len(df_tbx)):
         replaced = list(df_th['dir_name'][i])
         replaced[len('run_14h')] = '/'
@@ -68,8 +68,8 @@ def test_tensorboardX(prepare, testdir):
     df_tbx.drop(columns=['dir_name'], inplace=True)
     assert(df_th.equals(df_tbx))
     # (tag & dir_name) Parse & Compare
-    df_th = SummaryReader(log_dir_th, cols={'tag', 'dir_name'}).scalars
-    df_tbx = SummaryReader(log_dir_tbx, cols={'tag', 'dir_name'}).scalars
+    df_th = SummaryReader(log_dir_th, columns={'tag', 'dir_name'}).scalars
+    df_tbx = SummaryReader(log_dir_tbx, columns={'tag', 'dir_name'}).scalars
     for i in range(len(df_tbx)):
         replaced = list(df_th['dir_name'][i])
         replaced[len('run_14h')] = '/'
@@ -82,7 +82,7 @@ def test_tensorboardX(prepare, testdir):
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     # Test basic columns
-    reader = SummaryReader(log_dir, cols={'dir_name'})
+    reader = SummaryReader(log_dir, columns={'dir_name'})
     assert len(reader.children) == 4
     assert reader.scalars.columns.to_list(
     ) == ['step', 'run_14h', 'dir_name']
@@ -108,7 +108,7 @@ def test_log_dir(prepare, testdir):
     assert_almost_equal(df['run_14h'].to_numpy(),
                         [np.tan(i/R) for i in range(100)], 2)
     # Test all columns
-    reader = SummaryReader(log_dir, cols={
+    reader = SummaryReader(log_dir, columns={
                            'tag', 'wall_time', 'dir_name', 'file_name'})
     assert reader.scalars.columns.to_list(
     ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']

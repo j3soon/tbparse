@@ -75,14 +75,14 @@ def test_tensorboardX(prepare, testdir):
     df_tbx = SummaryReader(log_dir_tbx).histograms
     assert(df_th.equals(df_tbx))
     # Test columns without tag
-    cols = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, cols=cols).histograms
-    df_tbx = SummaryReader(log_dir_tbx, cols=cols).histograms
+    columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
     # Test columns with tag
-    cols = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, cols=cols).histograms
-    df_tbx = SummaryReader(log_dir_tbx, cols=cols).histograms
+    columns = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_tensorboardX_hist_raw(prepare, testdir):
@@ -120,14 +120,14 @@ def test_tensorboardX_hist_raw(prepare, testdir):
     df_tbx = SummaryReader(log_dir_tbx).histograms
     assert(df_th.equals(df_tbx))
     # Test columns without tag
-    cols = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, cols=cols).histograms
-    df_tbx = SummaryReader(log_dir_tbx, cols=cols).histograms
+    columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
     # Test columns with tag
-    cols = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, cols=cols).histograms
-    df_tbx = SummaryReader(log_dir_tbx, cols=cols).histograms
+    columns = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_event_file_raw(prepare, testdir):
@@ -168,7 +168,7 @@ def test_log_dir(prepare, testdir):
             len(df['dist/limits'][i])
         assert sum(df['dist/counts'][i]) == N_PARTICLES
     # Test tag columns
-    df = SummaryReader(log_dir, cols={'tag'}).histograms
+    df = SummaryReader(log_dir, columns={'tag'}).histograms
     assert df.columns.to_list(
     ) == ['step', 'tag', 'limits', 'counts']
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
@@ -179,7 +179,7 @@ def test_log_dir(prepare, testdir):
             len(df['limits'][i])
         assert sum(df['counts'][i]) == N_PARTICLES
     # Test all columns without tag
-    df = SummaryReader(log_dir, cols={
+    df = SummaryReader(log_dir, columns={
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'}).histograms
     assert df.columns.to_list(
@@ -197,7 +197,7 @@ def test_log_dir(prepare, testdir):
         assert np.isscalar(df['dist/sum'][i])
         assert np.isscalar(df['dist/sum_squares'][i])
     # Test all columns
-    df = SummaryReader(log_dir, cols={
+    df = SummaryReader(log_dir, columns={
                            'tag', 'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'}).histograms
     assert df.columns.to_list(

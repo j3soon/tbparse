@@ -156,7 +156,7 @@ If you are dealing with more sophisticated plots that require advanced
 filtering not shown in this page,
 you might want to refer to the following guides:
 
-* More column options: the `cols` option in :class:`tbparse.SummaryReader`
+* More column options: the `columns` option in :class:`tbparse.SummaryReader`
 * :std:doc:`Indexing and selecting data <pandas:user_guide/indexing>`
 * :std:doc:`MultiIndex / advanced indexing <pandas:user_guide/advanced>`
 * Filtering with RegEx: the `regex` option in :meth:`pandas.Series.str.contains`

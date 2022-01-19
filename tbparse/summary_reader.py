@@ -25,8 +25,8 @@ HPARAMS = 'hparams'
 class SummaryReader():
     """
     Creates a `SummaryReader` that will read all tensorboard events and
-    summaries in a directory contains multiple event files, or a single event
-    file.
+    summaries stored in a single event file, or a directory containing
+    multiple event files.
     """
 
     def __init__(self, log_path: str, **kwargs):
@@ -38,12 +38,12 @@ class SummaryReader():
         :param \\**kwargs:
             Additional keywords to control the data columns.
         :Keyword Args:
-            - **cols** (*Set[{'tag', 'dir_name', 'file_name', 'wall_time', \
+            - **columns** (*Set[{'tag', 'dir_name', 'file_name', 'wall_time', \
                 'hparams/`key`']}*) -- \
                 Specifies additional required columns, defaults to {}.
 
-                - (default): has columns `step`, `tag`, and `value`.
-                - tag:       replaces the individual tag columnss with \
+                - (default): has columns: `step`, `tag`, and `value`.
+                - tag:       replaces the individual tag columns with \
                              `tag` and `value` columns.
                 - dir_name:  add a column that contains the relative \
                              directory path.
@@ -57,17 +57,17 @@ class SummaryReader():
                 - sum_squares (histogram): the sum of squares for all values.
         """
         for k in kwargs:
-            if k not in {'cols'}:
+            if k not in {'columns'}:
                 raise KeyError(f"Invalid kwargs key: {k}")
 
         self._log_path: str = log_path
         """Load directory location, or load file location."""
         self._tag_style: str = 'auto'
         self._cache_mode: str = 'root'
-        self._cols: Set[str] = kwargs.get('cols', set()).copy()
-        if not isinstance(self._cols, set):
-            raise ValueError("`cols` should be a <class 'set'> instead of " +
-                             str(type(self._cols)))
+        self._columns: Set[str] = kwargs.get('columns', set()).copy()
+        if not isinstance(self._columns, set):
+            raise ValueError("`columns` should be a <class 'set'> instead of "
+                             + str(type(self._columns)))
         self._children: Dict[str, 'SummaryReader'] = {}
         """Holds a list of references to the `SummaryReader` children."""
 
@@ -95,7 +95,7 @@ class SummaryReader():
                 filepath = os.path.join(self.log_path, filename)
                 r = SummaryReader(
                     filepath,
-                    cols=self._cols,
+                    columns=self._columns,
                 )
                 self._children[filename] = r
 
@@ -168,11 +168,11 @@ class SummaryReader():
         """
         if tag_type not in {SCALARS, TENSORS, HISTOGRAMS}:
             raise ValueError(f"Unknown tag_type: {tag_type}")
-        group_cols = []
+        group_columns = []
         for c in ['dir_name', 'file_name']:
-            if c in self._cols:
-                group_cols.append(c)
-        group_cols.append('step')
+            if c in self._columns:
+                group_columns.append(c)
+        group_columns.append('step')
 
         if os.path.isfile(self.log_path):
             dfs = [self._events[tag_type]]
@@ -180,7 +180,7 @@ class SummaryReader():
             dfs = []
             for child in self._children.values():
                 df = child.get_events(tag_type)
-                if 'dir_name' in self._cols and \
+                if 'dir_name' in self._columns and \
                         os.path.isdir(child.log_path):
                     dir_name = os.path.basename(child.log_path)
                     df_cond = (df['dir_name'] == '')
@@ -191,12 +191,13 @@ class SummaryReader():
         df_stacked = pd.concat(dfs, ignore_index=True)
         if len(dfs) == 0 or df_stacked.empty:
             return pd.DataFrame()
-        if 'tag' in self._cols:
-            if len(group_cols) == 1:
+        if 'tag' in self._columns:
+            if len(group_columns) == 1:
                 return df_stacked
-            group_cols = group_cols[:-1]
-            group_cols.extend(['tag', 'step'])
-            df_stacked.sort_values(group_cols, ignore_index=True, inplace=True)
+            group_columns = group_columns[:-1]
+            group_columns.extend(['tag', 'step'])
+            df_stacked.sort_values(group_columns, ignore_index=True,
+                                   inplace=True)
             return df_stacked
 
         def merge(x):
@@ -222,18 +223,18 @@ class SummaryReader():
             if len(lst) == 1:
                 return lst[0]
             return lst
-        df_stacked.sort_values(group_cols, ignore_index=True, inplace=True)
-        grouped = df_stacked.groupby(group_cols, sort=False)
+        df_stacked.sort_values(group_columns, ignore_index=True, inplace=True)
+        grouped = df_stacked.groupby(group_columns, sort=False)
         df = grouped.agg(merge)
         df.reset_index(inplace=True)
         # Reorder columns
-        cols = [x for x in df.columns if x not in
-                ['step', 'wall_time', 'dir_name', 'file_name']]
-        cols = ['step'] + cols
+        columns = [x for x in df.columns if x not in
+                   ['step', 'wall_time', 'dir_name', 'file_name']]
+        columns = ['step'] + columns
         for c in ['wall_time', 'dir_name', 'file_name']:
-            if c in self._cols:
-                cols.append(c)
-        return df[cols]  # reorder
+            if c in self._columns:
+                columns.append(c)
+        return df[columns]  # reorder
 
     @property
     def scalars(self) -> pd.DataFrame:
@@ -373,33 +374,33 @@ class SummaryReader():
             i += 1
         return np.array(y) / np.sum(counts)
 
-    def _add_cols_scalar(self, d: Dict[str, Any], tag: str, e: ScalarEvent):
+    def _add_columns_scalar(self, d: Dict[str, Any], tag: str, e: ScalarEvent):
         """Add entries in dictionary `d` based on the ScalarEvent `e`"""
-        if 'tag' in self._cols:
+        if 'tag' in self._columns:
             d['tag'] = tag
             d['value'] = e.value
         else:
             d[tag] = e.value
 
-    def _add_cols_tensor(self, d: Dict[str, Any], tag: str, e: TensorEvent):
+    def _add_columns_tensor(self, d: Dict[str, Any], tag: str, e: TensorEvent):
         """Add entries in dictionary `d` based on the TensorEvent `e`"""
         value = tf.make_ndarray(e.tensor_proto)
         if value.shape == ():
             value = value.item()
-        if 'tag' in self._cols:
+        if 'tag' in self._columns:
             d['tag'] = tag
             d['value'] = value
         else:
             d[tag] = value
 
-    def _add_cols_histograms(self, d: Dict[str, Any], tag: str,
-                             e: HistogramEvent):
+    def _add_columns_histograms(self, d: Dict[str, Any], tag: str,
+                                e: HistogramEvent):
         """Add entries in dictionary `d` based on the HistogramEvent `e`"""
         hv = e.histogram_value
         limits = np.array([hv.min] + hv.bucket_limit,
                           dtype=np.float64)
         counts = np.array(hv.bucket, dtype=np.float64)
-        cols = {
+        columns = {
             'limits': limits,
             'counts': counts,
             'min': hv.min,
@@ -408,12 +409,12 @@ class SummaryReader():
             'sum': hv.sum,
             'sum_squares': hv.sum_squares,
         }
-        if 'tag' in self._cols:
+        if 'tag' in self._columns:
             d['tag'] = tag
-        lst = list(self._cols) + ['limits', 'counts']
-        for k, v in cols.items():
+        lst = list(self._columns) + ['limits', 'counts']
+        for k, v in columns.items():
             if k in lst:
-                key = k if 'tag' in self._cols else tag + '/' + k
+                key = k if 'tag' in self._columns else tag + '/' + k
                 d[key] = v
 
     def _parse_events(self, tag_type: str, event_acc: EventAccumulator):
@@ -430,13 +431,13 @@ class SummaryReader():
         self._tags[tag_type] = event_acc.Tags()[tag_type]
         # Add columns that depend on tag types
         if tag_type == SCALARS:
-            add_cols = self._add_cols_scalar
+            add_columns = self._add_columns_scalar
             getter = event_acc.Scalars
         elif tag_type == TENSORS:
-            add_cols = self._add_cols_tensor
+            add_columns = self._add_columns_tensor
             getter = event_acc.Tensors
         elif tag_type == HISTOGRAMS:
-            add_cols = self._add_cols_histograms
+            add_columns = self._add_columns_histograms
             getter = event_acc.Histograms
         else:
             raise ValueError(f"Unknown tag_type: {tag_type}")
@@ -445,12 +446,12 @@ class SummaryReader():
             events = getter(tag)
             for e in events:
                 d = {'step': e.step}
-                add_cols(d, tag, e)
-                if 'wall_time' in self._cols:
+                add_columns(d, tag, e)
+                if 'wall_time' in self._columns:
                     d['wall_time'] = e.wall_time
-                if 'dir_name' in self._cols:
+                if 'dir_name' in self._columns:
                     d['dir_name'] = ''
-                if 'file_name' in self._cols:
+                if 'file_name' in self._columns:
                     d['file_name'] = os.path.basename(self.log_path)
                 rows.append(d)
         df = pd.DataFrame(rows)
