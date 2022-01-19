@@ -79,7 +79,7 @@ def test_tensorboardX(prepare, testdir):
     df_th = SummaryReader(log_dir_th, cols={'tag', 'dir_name'}).scalars
     df_tbx = SummaryReader(log_dir_tbx, cols={'tag', 'dir_name'}).scalars
     assert df_th['step'].to_list() == df_tbx['step'].to_list()
-    r = re.compile('=|\+')
+    r = re.compile(r'=|\+')
     escaped_th_tag = [r.sub('_', x) for x in df_th['tag'].to_list()]
     assert escaped_th_tag == df_tbx['tag'].to_list()
     df_th.drop(columns=['tag'], inplace=True)

@@ -385,7 +385,7 @@ class SummaryReader():
         """Add entries in dictionary `d` based on the TensorEvent `e`"""
         value = tf.make_ndarray(e.tensor_proto)
         if value.shape == ():
-            value = np.asscalar(value)
+            value = value.item()
         if 'tag' in self._cols:
             d['tag'] = tag
             d['value'] = value
