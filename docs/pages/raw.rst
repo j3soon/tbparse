@@ -2,12 +2,12 @@
 Parsing without tbparse
 ===================================
 
-To the best of my knowledge, there are no official documentation on parsing
+To the best of our knowledge, there are no official documentation on parsing
 Tensorboard event files. However, it can be done with TensorFlow in two ways,
 which require inspecting the TensorFlow source code.
 
 If you have some event logs that are difficult to parse with the current
-``tbparse``, you can ask me by opening an `issue`_. Alternatively,
+``tbparse``, you can ask us by opening an `issue`_. Alternatively,
 you may parse the event logs by the methods described below.
 
 Similar to other pages, we need to first generate a event file. We use PyTorch
@@ -67,8 +67,20 @@ Summary Iterator
 * The source of `Summary Iterator is on GitHub <https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/summary/summary_iterator.py>`_.
 * A minimum example of `Summary Iterator is on Stack Overflow <https://stackoverflow.com/a/37359199/>`_.
 
+Experiment Data Access API for tensorboard.dev
+===================================
+
+The offical `tensorboard data access API <https://www.tensorflow.org/tensorboard/dataframe_api>`_
+is only available if you are using `tensorboard.dev <https://tensorboard.dev/>`_,
+and only supports parsing scalar logs, which makes it not useful for
+general cases. The `source code <https://github.com/tensorflow/tensorboard/blob/master/tensorboard/data/experimental/experiment_from_dev.py>`_
+of the data acess API parses everything on the tensorboard.dev server,
+so it's not possible to modify it for offline use.
+
 Related Tools
 ===================================
+
+Some other (unofficial) related tools on GitHub:
 
 * `chingyaoc/Tensorboard2Seaborn <https://github.com/chingyaoc/Tensorboard2Seaborn>`_
 * `wookayin/tensorboard-tools <https://github.com/wookayin/tensorboard-tools>`_
