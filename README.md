@@ -5,7 +5,7 @@
 [![doc](https://readthedocs.org/projects/tbparse/badge/?version=latest)](https://tbparse.readthedocs.io/en/latest)
 [![codecov](https://codecov.io/gh/j3soon/tbparse/branch/master/graph/badge.svg?token=ASxeqFrMom)](https://codecov.io/gh/j3soon/tbparse)
 [![pypi](https://img.shields.io/pypi/v/tbparse)](https://pypi.org/project/tbparse/)
-[![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/)
+[![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/) [![Downloads](https://pepy.tech/badge/tbparse)](https://pepy.tech/project/tbparse)
 
 A simple yet powerful tensorboard event log parser for data scientists or researchers that uses tensorboard:
 
@@ -16,6 +16,7 @@ A simple yet powerful tensorboard event log parser for data scientists or resear
 * Provides plotting examples for each type of events.
 * Stores the data in [pandas.DataFrame](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) to allow advanced filtering.
 * Both the documentation and code have high test coverage rate.
+* Follows [PEP 484](https://www.python.org/dev/peps/pep-0484/) with full type hints.
 
 Installation: (Requires python >= 3.7)
 

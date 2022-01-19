@@ -37,6 +37,7 @@ researchers that uses tensorboard:
   `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
   to allow advanced filtering.
 * Both the documentation and code have high test coverage rate.
+* Follows `PEP 484 <https://www.python.org/dev/peps/pep-0484/>`_ with full type hints.
 
 Installation: (Requires python >= 3.7)
 
