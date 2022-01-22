@@ -1,16 +1,18 @@
 import os
 import re
+import tempfile
 from typing import List
+
+import numpy as np
 import pandas as pd
 import pytest
-import tempfile
-import numpy as np
-from numpy.testing import assert_almost_equal
-import tensorflow as tf
-from tensorboard.backend.event_processing.event_accumulator import HistogramEvent, ScalarEvent
-from tbparse import SummaryReader
-from torch.utils.tensorboard import SummaryWriter
 import tensorboardX
+import tensorflow as tf
+from numpy.testing import assert_almost_equal
+from tbparse import SummaryReader
+from tensorboard.backend.event_processing.event_accumulator import (
+    HistogramEvent, ScalarEvent)
+from torch.utils.tensorboard import SummaryWriter
 
 RND_STATE = 1234
 N_EVENTS = 10
@@ -20,6 +22,8 @@ SIGMA = 2
 
 @pytest.fixture
 def prepare(testdir):
+    # Use torch for main tests, logs for tensorboard and tensorboardX are
+    # generated in their own tests.
     # Ref: https://pytorch.org/docs/stable/tensorboard.html
     log_dir = os.path.join(testdir.tmpdir, 'run')
     writer = SummaryWriter(log_dir)
@@ -38,8 +42,8 @@ def test_tensorflow(prepare, testdir):
     #       Therefore, we need to convert them manually.
     # Prepare Log
     log_dir_th = os.path.join(testdir.tmpdir, 'run')
-    tmpdir = tempfile.TemporaryDirectory()
-    log_dir_tf = os.path.join(tmpdir.name, 'run')
+    tmpdir_tf = tempfile.TemporaryDirectory()
+    log_dir_tf = os.path.join(tmpdir_tf.name, 'run')
     writer = tf.summary.create_file_writer(log_dir_tf)
     writer.set_as_default()
     rng = np.random.RandomState(RND_STATE)
@@ -47,9 +51,9 @@ def test_tensorflow(prepare, testdir):
         x = rng.normal(MU, SIGMA, size=N_PARTICLES)
         tf.summary.histogram('dist', x + i, i)
     writer.close()
-    # Test default
-    df_th = SummaryReader(log_dir_th).histograms
-    df_tf = SummaryReader(log_dir_tf).tensors
+    # Test pivot
+    df_th = SummaryReader(log_dir_th, pivot=True).histograms
+    df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
     for i in range(N_EVENTS):
         hist_dict = SummaryReader.buckets_to_histogram_dict(df_tf['dist'][i])
         assert len(hist_dict['counts']) + 1 == \
@@ -62,8 +66,8 @@ def test_tensorflow(prepare, testdir):
 def test_tensorboardX(prepare, testdir):
     # Prepare Log
     log_dir_th = os.path.join(testdir.tmpdir, 'run')
-    tmpdir = tempfile.TemporaryDirectory()
-    log_dir_tbx = os.path.join(tmpdir.name, 'run')
+    tmpdir_tbx = tempfile.TemporaryDirectory()
+    log_dir_tbx = os.path.join(tmpdir_tbx.name, 'run')
     writer = tensorboardX.SummaryWriter(log_dir_tbx)
     rng = np.random.RandomState(RND_STATE)
     for i in range(N_EVENTS):
@@ -74,15 +78,19 @@ def test_tensorboardX(prepare, testdir):
     df_th = SummaryReader(log_dir_th).histograms
     df_tbx = SummaryReader(log_dir_tbx).histograms
     assert(df_th.equals(df_tbx))
-    # Test columns without tag
+    # Test pivot
+    df_th = SummaryReader(log_dir_th, pivot=True).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).histograms
+    assert(df_th.equals(df_tbx))
+    # Test all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
     df_th = SummaryReader(log_dir_th, columns=columns).histograms
     df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
-    # Test columns with tag
-    columns = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
+    # Test pivot & all columns
+    columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, pivot=True, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True, columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_tensorboardX_hist_raw(prepare, testdir):
@@ -119,15 +127,19 @@ def test_tensorboardX_hist_raw(prepare, testdir):
     df_th = SummaryReader(log_dir_th).histograms
     df_tbx = SummaryReader(log_dir_tbx).histograms
     assert(df_th.equals(df_tbx))
-    # Test columns without tag
+    # Test pivot
+    df_th = SummaryReader(log_dir_th, pivot=True).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).histograms
+    assert(df_th.equals(df_tbx))
+    # Test all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
     df_th = SummaryReader(log_dir_th, columns=columns).histograms
     df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
     assert(df_th.equals(df_tbx))
-    # Test columns with tag
-    columns = {'tag', 'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
+    # Test pivot & all columns
+    columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
+    df_th = SummaryReader(log_dir_th, pivot=True, columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True, columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_event_file_raw(prepare, testdir):
@@ -135,7 +147,7 @@ def test_event_file_raw(prepare, testdir):
     dirs = os.listdir(log_dir)
     assert len(dirs) == 1
     event_file = os.path.join(log_dir, dirs[0])
-    reader = SummaryReader(event_file)
+    reader = SummaryReader(event_file, pivot=True)
     # Test raw functions
     # - Test `raw_tags` and `get_raw_tags`
     assert reader.raw_tags == reader.get_raw_tags()
@@ -156,19 +168,8 @@ def test_event_file_raw(prepare, testdir):
 
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
-    # Test default columns
-    reader = SummaryReader(log_dir)
-    assert len(reader.children) == 1
+    # Test default
     df = SummaryReader(log_dir).histograms
-    assert df.columns.to_list(
-    ) == ['step', 'dist/limits', 'dist/counts']
-    assert df['step'].to_list() == [i for i in range(N_EVENTS)]
-    for i in range(N_EVENTS):
-        assert len(df['dist/counts'][i]) + 1 == \
-            len(df['dist/limits'][i])
-        assert sum(df['dist/counts'][i]) == N_PARTICLES
-    # Test tag columns
-    df = SummaryReader(log_dir, columns={'tag'}).histograms
     assert df.columns.to_list(
     ) == ['step', 'tag', 'limits', 'counts']
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
@@ -178,8 +179,37 @@ def test_log_dir(prepare, testdir):
         assert len(df['counts'][i]) + 1 == \
             len(df['limits'][i])
         assert sum(df['counts'][i]) == N_PARTICLES
-    # Test all columns without tag
+    # Test pivot
+    reader = SummaryReader(log_dir, pivot=True)
+    assert len(reader.children) == 1
+    df = SummaryReader(log_dir, pivot=True).histograms
+    assert df.columns.to_list(
+    ) == ['step', 'dist/limits', 'dist/counts']
+    assert df['step'].to_list() == [i for i in range(N_EVENTS)]
+    for i in range(N_EVENTS):
+        assert len(df['dist/counts'][i]) + 1 == \
+            len(df['dist/limits'][i])
+        assert sum(df['dist/counts'][i]) == N_PARTICLES
+    # Test all columns
     df = SummaryReader(log_dir, columns={
+                           'min', 'max', 'num', 'sum', 'sum_squares',
+                           'wall_time', 'dir_name', 'file_name'}).histograms
+    assert df.columns.to_list(
+        ) == ['step', 'tag', 'limits', 'counts', 'min', 'max', 'num', 'sum',
+        'sum_squares', 'wall_time', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [i for i in range(N_EVENTS)]
+    assert df['tag'].to_list() == ['dist' for _ in range(N_EVENTS)]
+    for i in range(N_EVENTS):
+        assert len(df['counts'][i]) + 1 == \
+            len(df['limits'][i])
+        assert sum(df['counts'][i]) == N_PARTICLES
+        assert np.isscalar(df['min'][i])
+        assert np.isscalar(df['max'][i])
+        assert df['num'][i] == N_PARTICLES
+        assert np.isscalar(df['sum'][i])
+        assert np.isscalar(df['sum_squares'][i])
+    # Test pivot & all columns
+    df = SummaryReader(log_dir, pivot=True, columns={
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'}).histograms
     assert df.columns.to_list(
@@ -196,24 +226,6 @@ def test_log_dir(prepare, testdir):
         assert df['dist/num'][i] == N_PARTICLES
         assert np.isscalar(df['dist/sum'][i])
         assert np.isscalar(df['dist/sum_squares'][i])
-    # Test all columns
-    df = SummaryReader(log_dir, columns={
-                           'tag', 'min', 'max', 'num', 'sum', 'sum_squares',
-                           'wall_time', 'dir_name', 'file_name'}).histograms
-    assert df.columns.to_list(
-        ) == ['step', 'tag', 'limits', 'counts', 'min', 'max', 'num', 'sum',
-        'sum_squares', 'wall_time', 'dir_name', 'file_name']
-    assert df['step'].to_list() == [i for i in range(N_EVENTS)]
-    assert df['tag'].to_list() == ['dist' for _ in range(N_EVENTS)]
-    for i in range(N_EVENTS):
-        assert len(df['counts'][i]) + 1 == \
-            len(df['limits'][i])
-        assert sum(df['counts'][i]) == N_PARTICLES
-        assert np.isscalar(df['min'][i])
-        assert np.isscalar(df['max'][i])
-        assert df['num'][i] == N_PARTICLES
-        assert np.isscalar(df['sum'][i])
-        assert np.isscalar(df['sum_squares'][i])
 
 def test_histogram_to_cdf():
     counts = [1, 3]

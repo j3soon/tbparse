@@ -6,4 +6,4 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.pylint.messages_control]
-good-names = "i,j,k,c,d,e,n,r,t,v,x,y,xx,df,hv"
+good-names = "i,j,k,c,d,e,n,r,s,t,v,x,y,xx,df,hv"

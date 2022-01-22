@@ -1,22 +1,25 @@
 import os
 import re
-from tests.test_summary_reader.test_histogram import N_EVENTS
-from typing import List
-from numpy.testing import assert_almost_equal
-import pytest
 import tempfile
+from typing import List
+
 import numpy as np
-import tensorflow as tf
-from tensorboard.backend.event_processing.event_accumulator import ScalarEvent
-from tbparse import SummaryReader
-from torch.utils.tensorboard import SummaryWriter
+import pytest
 import tensorboardX
+import tensorflow as tf
+from numpy.testing import assert_almost_equal
+from tbparse import SummaryReader
+from tensorboard.backend.event_processing.event_accumulator import ScalarEvent
+from tests.test_summary_reader.test_histogram import N_EVENTS
+from torch.utils.tensorboard import SummaryWriter
 
 R = 5
 N_STEPS = 100
 
 @pytest.fixture
 def prepare(testdir):
+    # Use torch for main tests, logs for tensorboard and tensorboardX are
+    # generated in their own tests.
     # Ref: https://pytorch.org/docs/stable/tensorboard.html
     log_dir = os.path.join(testdir.tmpdir, 'run')
     writer = SummaryWriter(log_dir)
@@ -44,8 +47,8 @@ def test_tensorboardX(prepare, testdir):
     # Note: tensorboardX uses '/' instead of '_' for adding scalars.
     # Prepare Log
     log_dir_th = os.path.join(testdir.tmpdir, 'run')
-    tmpdir = tempfile.TemporaryDirectory()
-    log_dir_tbx = os.path.join(tmpdir.name, 'run')
+    tmpdir_tbx = tempfile.TemporaryDirectory()
+    log_dir_tbx = os.path.join(tmpdir_tbx.name, 'run')
     writer = tensorboardX.SummaryWriter(log_dir_tbx)
     for i in range(N_STEPS):
         writer.add_scalars('run_14h', {'xsinx':i*np.sin(i/R),
@@ -55,6 +58,10 @@ def test_tensorboardX(prepare, testdir):
     # (default) Parse & Compare
     df_th = SummaryReader(log_dir_th).scalars
     df_tbx = SummaryReader(log_dir_tbx).scalars
+    assert(df_th.equals(df_tbx))
+    # (pivot) Parse & Compare
+    df_th = SummaryReader(log_dir_th, pivot=True).scalars
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).scalars
     assert(df_th.equals(df_tbx))
     # (dir_name) Parse & Compare
     df_th = SummaryReader(log_dir_th, columns={'dir_name'}).scalars
@@ -67,9 +74,9 @@ def test_tensorboardX(prepare, testdir):
     df_th.drop(columns=['dir_name'], inplace=True)
     df_tbx.drop(columns=['dir_name'], inplace=True)
     assert(df_th.equals(df_tbx))
-    # (tag & dir_name) Parse & Compare
-    df_th = SummaryReader(log_dir_th, columns={'tag', 'dir_name'}).scalars
-    df_tbx = SummaryReader(log_dir_tbx, columns={'tag', 'dir_name'}).scalars
+    # (pivot & dir_name) Parse & Compare
+    df_th = SummaryReader(log_dir_th, pivot=True, columns={'dir_name'}).scalars
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True, columns={'dir_name'}).scalars
     for i in range(len(df_tbx)):
         replaced = list(df_th['dir_name'][i])
         replaced[len('run_14h')] = '/'
@@ -81,8 +88,8 @@ def test_tensorboardX(prepare, testdir):
 
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
-    # Test basic columns
-    reader = SummaryReader(log_dir, columns={'dir_name'})
+    # Test pivot
+    reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
     assert len(reader.children) == 4
     assert reader.scalars.columns.to_list(
     ) == ['step', 'run_14h', 'dir_name']
@@ -109,6 +116,6 @@ def test_log_dir(prepare, testdir):
                         [np.tan(i/R) for i in range(100)], 2)
     # Test all columns
     reader = SummaryReader(log_dir, columns={
-                           'tag', 'wall_time', 'dir_name', 'file_name'})
+                           'wall_time', 'dir_name', 'file_name'})
     assert reader.scalars.columns.to_list(
     ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']

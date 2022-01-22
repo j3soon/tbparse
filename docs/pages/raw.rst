@@ -21,7 +21,7 @@ which requires needs more parsing code.
    >>> from torch.utils.tensorboard import SummaryWriter
    >>> # Prepare temp dirs for storing event files
    >>> tmpdir = tempfile.TemporaryDirectory()
-   >>> log_dir = os.path.join(tmpdir.name)
+   >>> log_dir = tmpdir.name
    >>> writer = SummaryWriter(log_dir)
    >>> for i in range(5):
    ...   writer.add_scalar('y=2x', i * 2, i)
@@ -68,7 +68,7 @@ Summary Iterator
 * A minimum example of `Summary Iterator is on Stack Overflow <https://stackoverflow.com/a/37359199/>`_.
 
 Experiment Data Access API for tensorboard.dev
-===================================
+======================================================================
 
 The offical `tensorboard data access API <https://www.tensorflow.org/tensorboard/dataframe_api>`_
 is only available if you are using `tensorboard.dev <https://tensorboard.dev/>`_,
