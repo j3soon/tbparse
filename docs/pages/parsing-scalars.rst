@@ -253,7 +253,7 @@ We can further load all runs under the root log directory.
       9      1  y=3x+C    4.0
       10     2  y=3x+C    6.0
       11     2  y=3x+C    7.0
-      >>> reader = SummaryReader(log_dir, columns={'dir_name'}) # with event dir name
+      >>> reader = SummaryReader(log_dir, extra_columns={'dir_name'}) # with event dir name
       >>> reader.scalars
           step     tag  value dir_name
       0      0  y=2x+C    0.0     run0
@@ -286,7 +286,7 @@ We can further load all runs under the root log directory.
       0     0  [0.0, 1.0]  [0.0, 1.0]
       1     1  [2.0, 3.0]  [3.0, 4.0]
       2     2  [4.0, 5.0]  [6.0, 7.0]
-      >>> reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'}) # with event dir name
+      >>> reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'}) # with event dir name
       >>> reader.scalars
          step  y=2x+C  y=3x+C dir_name
       0     0     0.0     0.0     run0
@@ -335,7 +335,7 @@ We can plot all scalar logs in a single run.
          :context: close-figs
 
          import matplotlib.pyplot as plt
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['dir_name'] == 'run0']
          df_2x = df[df['tag'] == 'y=2x+C']
@@ -353,7 +353,7 @@ We can plot all scalar logs in a single run.
          :context: close-figs
 
          import matplotlib.pyplot as plt
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['dir_name'] == 'run0']
          plt.plot(df['step'], df['y=2x+C'])
@@ -373,7 +373,7 @@ We can compare scalars across runs.
          :context: close-figs
 
          import matplotlib.pyplot as plt
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          run0 = df[df['dir_name'] == 'run0']
          run1 = df[df['dir_name'] == 'run1']
@@ -392,7 +392,7 @@ We can compare scalars across runs.
          :context: close-figs
 
          import matplotlib.pyplot as plt
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          run0 = df[df['dir_name'] == 'run0']
          run1 = df[df['dir_name'] == 'run1']
@@ -418,7 +418,7 @@ We can plot all scalar logs in a single run.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['dir_name'] == 'run0']
          g = sns.lineplot(data=df, x='step', y='value', hue='tag')
@@ -430,7 +430,7 @@ We can plot all scalar logs in a single run.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['dir_name'] == 'run0']
          g = sns.lineplot(data=df, x='step', y='y=2x+C')
@@ -448,7 +448,7 @@ We can compare scalars across runs.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['tag'] == 'y=2x+C']
          g = sns.lineplot(data=df, x='step', y='value', hue='dir_name')
@@ -460,7 +460,7 @@ We can compare scalars across runs.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          g = sns.lineplot(data=df, x='step', y='y=2x+C', hue='dir_name')
          g.set(ylabel='value', title='y=2x+C')
@@ -475,7 +475,7 @@ We can compare all scalar logs across runs with shaded confidence interval.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          g = sns.lineplot(data=df, x='step', y='value', hue='tag')
          g.set(title='confidence interval of multiple runs')
@@ -486,7 +486,7 @@ We can compare all scalar logs across runs with shaded confidence interval.
          :context: close-figs
 
          import seaborn as sns
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          g = sns.lineplot(data=df, x='step', y='y=2x+C')
          g = sns.lineplot(data=df, x='step', y='y=3x+C')
@@ -507,7 +507,7 @@ We can plot all scalar logs in a single run.
       .. plot::
          :context: close-figs
 
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          df.set_index('step', inplace=True)
          df = df[df['dir_name'] == 'run0']
@@ -522,7 +522,7 @@ We can plot all scalar logs in a single run.
       .. plot::
          :context: close-figs
 
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          df.set_index('step', inplace=True)
          df = df[df['dir_name'] == 'run0']
@@ -537,7 +537,7 @@ We can compare scalars across runs.
       .. plot::
          :context: close-figs
 
-         reader = SummaryReader(log_dir, columns={'dir_name'})
+         reader = SummaryReader(log_dir, extra_columns={'dir_name'})
          df = reader.scalars
          df = df[df['tag'] == 'y=2x+C']
          run0 = df.loc[df['dir_name'] == 'run0', ['step', 'value']].rename(columns={'value': 'run0'})
@@ -551,7 +551,7 @@ We can compare scalars across runs.
       .. plot::
          :context: close-figs
 
-         reader = SummaryReader(log_dir, pivot=True, columns={'dir_name'})
+         reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
          df = reader.scalars
          run0 = df.loc[df['dir_name'] == 'run0', ['step', 'y=2x+C']].rename(columns={'y=2x+C': 'run0'})
          run1 = df.loc[df['dir_name'] == 'run1', ['step', 'y=2x+C']].rename(columns={'y=2x+C': 'run1'})

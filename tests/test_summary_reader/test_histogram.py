@@ -84,13 +84,13 @@ def test_tensorboardX(prepare, testdir):
     assert(df_th.equals(df_tbx))
     # Test all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
+    df_th = SummaryReader(log_dir_th, extra_columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, extra_columns=columns).histograms
     assert(df_th.equals(df_tbx))
     # Test pivot & all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, pivot=True, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, pivot=True, columns=columns).histograms
+    df_th = SummaryReader(log_dir_th, pivot=True, extra_columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True, extra_columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_tensorboardX_hist_raw(prepare, testdir):
@@ -133,13 +133,13 @@ def test_tensorboardX_hist_raw(prepare, testdir):
     assert(df_th.equals(df_tbx))
     # Test all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, columns=columns).histograms
+    df_th = SummaryReader(log_dir_th, extra_columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, extra_columns=columns).histograms
     assert(df_th.equals(df_tbx))
     # Test pivot & all columns
     columns = {'min', 'max', 'num', 'sum', 'sum_squares', 'dir_name'}
-    df_th = SummaryReader(log_dir_th, pivot=True, columns=columns).histograms
-    df_tbx = SummaryReader(log_dir_tbx, pivot=True, columns=columns).histograms
+    df_th = SummaryReader(log_dir_th, pivot=True, extra_columns=columns).histograms
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True, extra_columns=columns).histograms
     assert(df_th.equals(df_tbx))
 
 def test_event_file_raw(prepare, testdir):
@@ -191,7 +191,7 @@ def test_log_dir(prepare, testdir):
             len(df['dist/limits'][i])
         assert sum(df['dist/counts'][i]) == N_PARTICLES
     # Test all columns
-    df = SummaryReader(log_dir, columns={
+    df = SummaryReader(log_dir, extra_columns={
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'}).histograms
     assert df.columns.to_list(
@@ -209,7 +209,7 @@ def test_log_dir(prepare, testdir):
         assert np.isscalar(df['sum'][i])
         assert np.isscalar(df['sum_squares'][i])
     # Test pivot & all columns
-    df = SummaryReader(log_dir, pivot=True, columns={
+    df = SummaryReader(log_dir, pivot=True, extra_columns={
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'}).histograms
     assert df.columns.to_list(

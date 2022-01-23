@@ -57,16 +57,16 @@ def test_tensorflow(prepare, testdir):
     df_tf = SummaryReader(log_dir_tf).tensors
     assert(df_th.equals(df_tf))
     # (dir_name) Parse & Compare
-    df_th = SummaryReader(log_dir_th, columns={'dir_name'}).tensors
-    df_tf = SummaryReader(log_dir_tf, columns={'dir_name'}).tensors
+    df_th = SummaryReader(log_dir_th, extra_columns={'dir_name'}).tensors
+    df_tf = SummaryReader(log_dir_tf, extra_columns={'dir_name'}).tensors
     assert(df_th.equals(df_tf))
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
     assert(df_th.equals(df_tf))
     # (pivot & dir_name) Parse & Compare
-    df_th = SummaryReader(log_dir_th, pivot=True, columns={'dir_name'}).tensors
-    df_tf = SummaryReader(log_dir_tf, pivot=True, columns={'dir_name'}).tensors
+    df_th = SummaryReader(log_dir_th, pivot=True, extra_columns={'dir_name'}).tensors
+    df_tf = SummaryReader(log_dir_tf, pivot=True, extra_columns={'dir_name'}).tensors
     assert(df_th.equals(df_tf))
 
 def test_event_file_raw(prepare, testdir):
@@ -125,24 +125,24 @@ def test_event_file(prepare, testdir):
     assert reader.tensors['value'].to_list()[N_EVENTS:] == [
         i * 3 for i in range(N_EVENTS)]
     # Test pivot & additional wall_time column
-    reader = SummaryReader(event_file, pivot=True, columns={'wall_time'})
+    reader = SummaryReader(event_file, pivot=True, extra_columns={'wall_time'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'wall_time']
     assert len(reader.tensors['wall_time']) == N_EVENTS
     # Test pivot & additional dir_name column
-    reader = SummaryReader(event_file, pivot=True, columns={'dir_name'})
+    reader = SummaryReader(event_file, pivot=True, extra_columns={'dir_name'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'dir_name']
     assert reader.tensors['dir_name'].to_list() == [
         '' for _ in range(N_EVENTS)]
     # Test pivot & additional file_name column
-    reader = SummaryReader(event_file, pivot=True, columns={'file_name'})
+    reader = SummaryReader(event_file, pivot=True, extra_columns={'file_name'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'file_name']
     assert reader.tensors['file_name'].to_list(
     ) == [event_filename for _ in range(N_EVENTS)]
     # Test all columns
-    reader = SummaryReader(event_file, columns={
+    reader = SummaryReader(event_file, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
@@ -171,7 +171,7 @@ def test_run_dir(prepare, testdir):
     assert len(dirs) == 1
     event_filename = dirs[0]
     # Test pivot
-    reader = SummaryReader(run_dir, pivot=True, columns={
+    reader = SummaryReader(run_dir, pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert len(reader.children) == 1
     assert reader.tensors.columns.to_list(
@@ -188,7 +188,7 @@ def test_run_dir(prepare, testdir):
     assert reader.tensors['file_name'].to_list(
     ) == [event_filename for _ in range(N_EVENTS)]
     # Test all columns
-    reader = SummaryReader(run_dir, columns={
+    reader = SummaryReader(run_dir, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
@@ -213,7 +213,7 @@ def test_run_dir(prepare, testdir):
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     # Test pivot
-    reader = SummaryReader(log_dir, pivot=True, columns={
+    reader = SummaryReader(log_dir, pivot=True, extra_columns={
                            'dir_name', 'file_name'})
     assert len(reader.children) == N_RUNS
     assert reader.tensors.columns.to_list(
@@ -235,7 +235,7 @@ def test_log_dir(prepare, testdir):
         assert reader.tensors['file_name'][s:e].to_list() == \
             [event_filename for _ in range(N_EVENTS)]
     # Test all columns
-    reader = SummaryReader(log_dir, columns={
+    reader = SummaryReader(log_dir, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list(
     ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']

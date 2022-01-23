@@ -31,6 +31,10 @@ MINIMUM_SIZE_GUIDANCE = {
     TENSORS: 1,
 }
 
+ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS}
+ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max',
+                     'num', 'sum', 'sum_squares'}
+
 
 class SummaryReader():
     """
@@ -38,24 +42,21 @@ class SummaryReader():
     stored in a event file or a directory containing multiple event files.
     """
 
-    def __init__(self, log_path: str, **kwargs):
+    def __init__(self, log_path: str, *, pivot=False, extra_columns=None,
+                 event_types=None):
         """The constructor of SummaryReader. Columns contains `step`, `tag`, \
            and `value` by default.
 
         :param log_path: Load directory location, or load file location.
         :type log_path: str
 
-        :param \\**kwargs:
-            Additional keywords to control the data columns.
-        :Keyword Args:
-            - **pivot** (*bool*) -- Returns long format DataFrame by default, \
+        :param pivot: Returns long format DataFrame by default, \
                 returns wide format DataFrame if set to True. If there are \
                 multiple values per step with the same tag, the values are \
                 merged into a list.
-            - **columns** (*Set[{'dir_name', 'file_name', 'wall_time', \
-                'min', 'max', 'num', 'sum', 'sum_squares'}]*) -- \
-                Specifies additional required columns, defaults to {}.
+        :type pivot: bool
 
+        :param extra_columns: Specifies extra columns, defaults to `None`.
                 - dir_name:  add a column that contains the relative \
                              directory path.
                 - file_name: add a column that contains the relative \
@@ -66,33 +67,31 @@ class SummaryReader():
                 - num (histogram): the number of values.
                 - sum (histogram): the sum of all values.
                 - sum_squares (histogram): the sum of squares for all values.
-            - **event_types** (*Set[{'scalars', 'tensors', 'histograms'}]*) \
-                -- Specifies the event types to parse, defaults to all.
-        """
-        diff = kwargs.keys() - {'pivot', 'columns'}
-        if len(diff) > 0:
-            raise KeyError(f"Invalid kwargs keys: {diff}")
+        :type extra_columns: Set[{'dir_name', 'file_name', 'wall_time', \
+                'min', 'max', 'num', 'sum', 'sum_squares'}]
 
+        :param event_types: Specifies the event types to parse, \
+            defaults to all event types.
+        :type event_types: Set[{'scalars', 'tensors', 'histograms'}]
+        """
         self._log_path: str = log_path
         """Load directory location, or load file location."""
-        self._columns: Set[str] = kwargs.get('columns', set()).copy()
+        self._extra_columns: Set[str] = (extra_columns or set()).copy()
         """Specifies additional required columns."""
-        if not isinstance(self._columns, set):
+        if not isinstance(self._extra_columns, set):
             raise ValueError(f"`columns` should be a {set} instead of \
-                              {str(type(self._columns))}")
-        diff = self._columns - {'dir_name', 'file_name', 'wall_time',
-                                'min', 'max', 'num', 'sum', 'sum_squares'}
+                              {str(type(self._extra_columns))}")
+        diff = self._extra_columns - ALL_EXTRA_COLUMNS
         if len(diff) > 0:
             raise KeyError(f"Invalid columns entries: {diff}")
-        self._pivot: bool = kwargs.get('pivot', False)
+        self._pivot: bool = pivot
         """Determines whether the DataFrame is stored in wide format."""
-        self._event_types: Set[str] = kwargs.get('event_types', {
-            SCALARS, TENSORS, HISTOGRAMS})
+        self._event_types: Set[str] = (event_types or ALL_EVENT_TYPES).copy()
         """Specifies the event types to parse."""
         if not isinstance(self._event_types, set):
             raise ValueError(f"`event_types` should be a {set} instead of \
                               {str(type(self._event_types))}")
-        diff = self._event_types - {SCALARS, TENSORS, HISTOGRAMS}
+        diff = self._event_types - ALL_EVENT_TYPES
         if len(diff) > 0:
             raise KeyError(f"Invalid event types: {diff}")
         self._children: Dict[str, 'SummaryReader'] = {}
@@ -123,7 +122,7 @@ class SummaryReader():
                 filepath = os.path.join(self.log_path, filename)
                 r = SummaryReader(filepath,
                                   pivot=self._pivot,
-                                  columns=self._columns)
+                                  extra_columns=self._extra_columns)
                 self._children[filename] = r
 
     @property
@@ -217,11 +216,11 @@ class SummaryReader():
         :return: A `DataFrame` storing all `tag_type` events.
         :rtype: pandas.DataFrame
         """
-        if tag_type not in {SCALARS, TENSORS, HISTOGRAMS}:
+        if tag_type not in ALL_EVENT_TYPES:
             raise ValueError(f"Unknown tag_type: {tag_type}")
         group_columns = []
         for c in ['dir_name', 'file_name']:
-            if c in self._columns:
+            if c in self._extra_columns:
                 group_columns.append(c)
         group_columns.append('step')
 
@@ -234,7 +233,7 @@ class SummaryReader():
             for child in self._children.values():
                 df = child.get_events(tag_type)
                 # iteratively prepend dir_name
-                if 'dir_name' in self._columns and \
+                if 'dir_name' in self._extra_columns and \
                         os.path.isdir(child.log_path):
                     dir_name = os.path.basename(child.log_path)
                     df_cond = (df['dir_name'] == '')
@@ -262,7 +261,7 @@ class SummaryReader():
                    ['step', 'wall_time', 'dir_name', 'file_name']]
         columns = ['step'] + columns
         for c in ['wall_time', 'dir_name', 'file_name']:
-            if c in self._columns:
+            if c in self._extra_columns:
                 columns.append(c)
         return df[columns]  # reorder
 
@@ -444,7 +443,7 @@ class SummaryReader():
         }
         if not self._pivot:
             d['tag'] = tag
-        lst = list(self._columns) + ['limits', 'counts']
+        lst = list(self._extra_columns) + ['limits', 'counts']
         for k, v in columns.items():
             if k in lst:
                 key = k if not self._pivot else tag + '/' + k
@@ -480,11 +479,11 @@ class SummaryReader():
             for e in events:
                 d = {'step': e.step}
                 add_columns(d, tag, e)
-                if 'wall_time' in self._columns:
+                if 'wall_time' in self._extra_columns:
                     d['wall_time'] = e.wall_time
-                if 'dir_name' in self._columns:
+                if 'dir_name' in self._extra_columns:
                     d['dir_name'] = ''
-                if 'file_name' in self._columns:
+                if 'file_name' in self._extra_columns:
                     d['file_name'] = os.path.basename(self.log_path)
                 rows.append(d)
         df = pd.DataFrame(rows)
