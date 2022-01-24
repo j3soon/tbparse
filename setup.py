@@ -15,19 +15,19 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=github_url,
     project_urls={
-        'Changelog': f'{github_url}/blob/master/docs/pages/changelog.rst',
-        'Issues': f'{github_url}/issues',
-        'Source Code': github_url,
+        "Changelog": f"{github_url}/blob/master/docs/pages/changelog.rst",
+        "Issues": f"{github_url}/issues",
+        "Source Code": github_url,
     },
     keywords=(
-        'package, parser, plot, python, pytorch, reader, tensorboard, tensorboardx, tensorflow'
+        "package, parser, plot, python, pytorch, reader, tensorboard, tensorboardx, tensorflow"
     ),
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
@@ -35,12 +35,14 @@ setuptools.setup(
     packages=setuptools.find_packages(where=".", exclude=("tests*",)),
     python_requires=">=3.7",
     install_requires=[
-        'pandas>=1.3.0',
-        'tensorflow>=2.0.0',
+        "pandas>=1.3.0",
+        "tensorflow>=2.0.0",
     ],
     extras_require={
-        'testing': ['pytest', 'mypy', 'flake8', 'pylint', 'sphinx',
-                    'sphinx-rtd-theme', 'torch', 'tensorboardX', 'seaborn',
-                    'pytest-cov', 'sphinx-tabs'],
+        "testing": ["pytest", "mypy", "flake8", "pylint", "sphinx",
+                    "sphinx-rtd-theme", "torch", "tensorboardX", "seaborn",
+                    "pytest-cov", "sphinx-tabs"],
     },
 )
+
+# Note: PyPI seems to only recognize double-quoted strings

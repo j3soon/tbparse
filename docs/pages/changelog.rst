@@ -9,6 +9,10 @@ Changes:
 
 * Clarify SummaryReader's parameters (Breaking Change)
 
+Fixes:
+
+* Fix PyPI package metadata
+
 v0.0.2
 ===================================
 
