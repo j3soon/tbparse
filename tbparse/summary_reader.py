@@ -224,12 +224,14 @@ class SummaryReader():
                 group_columns.append(c)
         group_columns.append('step')
 
+        dfs = []
         if os.path.isfile(self.log_path):
             # Leaf node appends events directly
-            dfs = [self._events[tag_type]]
+            df = self._events[tag_type]
+            if df is not None:
+                dfs.append(df)
         else:
             # Non-leaf node collects children's events
-            dfs = []
             for child in self._children.values():
                 df = child.get_events(tag_type)
                 # iteratively prepend dir_name
@@ -240,9 +242,12 @@ class SummaryReader():
                     df.loc[df_cond, 'dir_name'] = dir_name
                     df.loc[~df_cond, 'dir_name'] = \
                         dir_name + '/' + df.loc[~df_cond, 'dir_name']
-                dfs.append(df)
+                if df is not None:
+                    dfs.append(df)
+        if len(dfs) == 0:
+            return pd.DataFrame()
         df_stacked = pd.concat(dfs, ignore_index=True)
-        if len(dfs) == 0 or df_stacked.empty:
+        if df_stacked.empty:
             return pd.DataFrame()
         if not self._pivot:
             group_columns = group_columns[:-1]
