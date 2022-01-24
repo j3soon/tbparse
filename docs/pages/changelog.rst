@@ -2,6 +2,13 @@
 Change Log
 ===================================
 
+v0.0.3
+===================================
+
+Changes:
+
+* Clarify SummaryReader's parameters (Breaking Change)
+
 v0.0.2
 ===================================
 
