@@ -21,7 +21,6 @@ def prepare(testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     for i in range(N_RUNS):
         writer = SummaryWriter(os.path.join(log_dir, f'run{i}'))
-        # writer.add_hparams({'name': 'test', 'run id': i}, {}, run_name='.')
         for j in range(N_EVENTS):
             writer.add_scalar('y=2x+C', j * 2 + i, j)
             writer.add_scalar('y=3x+C', j * 3 + i, j)
@@ -113,6 +112,11 @@ def test_event_file_raw(prepare, testdir):
     for i in range(N_EVENTS):
         assert (events[i].step, events[i].value) == (i, i * 2)
 
+def check_others(reader):
+    assert len(reader.tensors) == 0
+    assert len(reader.histograms) == 0
+    assert len(reader.hparams) == 0
+
 def test_event_file(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     run_dir = os.path.join(log_dir, 'run0')
@@ -127,14 +131,13 @@ def test_event_file(prepare, testdir):
         i for i in range(N_EVENTS)]
     assert reader.scalars['step'].to_list()[N_EVENTS:] == [
         i for i in range(N_EVENTS)]
-    assert reader.scalars['tag'].to_list()[:N_EVENTS] == [
-        'y=2x+C' for _ in range(N_EVENTS)]
-    assert reader.scalars['tag'].to_list()[N_EVENTS:] == [
-        'y=3x+C' for _ in range(N_EVENTS)]
+    assert reader.scalars['tag'].to_list()[:N_EVENTS] == ['y=2x+C'] * N_EVENTS
+    assert reader.scalars['tag'].to_list()[N_EVENTS:] == ['y=3x+C'] * N_EVENTS
     assert reader.scalars['value'].to_list()[:N_EVENTS] == [
         i * 2 for i in range(N_EVENTS)]
     assert reader.scalars['value'].to_list()[N_EVENTS:] == [
         i * 3 for i in range(N_EVENTS)]
+    check_others(reader)
     # Test pivot
     reader = SummaryReader(event_file, pivot=True)
     assert reader.scalars.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C']
@@ -143,23 +146,25 @@ def test_event_file(prepare, testdir):
                                                   2 for i in range(N_EVENTS)]
     assert reader.scalars['y=3x+C'].to_list() == [i *
                                                   3 for i in range(N_EVENTS)]
+    check_others(reader)
     # Test pivot & additional wall_time column
     reader = SummaryReader(event_file, pivot=True, extra_columns={'wall_time'})
     assert reader.scalars.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'wall_time']
     assert len(reader.scalars['wall_time']) == N_EVENTS
+    check_others(reader)
     # Test pivot & additional dir_name column
     reader = SummaryReader(event_file, pivot=True, extra_columns={'dir_name'})
     assert reader.scalars.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'dir_name']
-    assert reader.scalars['dir_name'].to_list() == [
-        '' for _ in range(N_EVENTS)]
+    assert reader.scalars['dir_name'].to_list() == [''] * N_EVENTS
+    check_others(reader)
     # Test pivot & additional file_name column
     reader = SummaryReader(event_file, pivot=True, extra_columns={'file_name'})
     assert reader.scalars.columns.to_list(
     ) == ['step', 'y=2x+C', 'y=3x+C', 'file_name']
-    assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS)]
+    assert reader.scalars['file_name'].to_list() == [event_filename] * N_EVENTS
+    check_others(reader)
     # Test all columns
     reader = SummaryReader(event_file, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
@@ -170,18 +175,18 @@ def test_event_file(prepare, testdir):
     assert reader.scalars['step'].to_list()[N_EVENTS:] == [
         i for i in range(N_EVENTS)]
     assert reader.scalars['tag'].to_list()[:N_EVENTS] == [
-        'y=2x+C' for _ in range(N_EVENTS)]
+        'y=2x+C'] * N_EVENTS
     assert reader.scalars['tag'].to_list()[N_EVENTS:] == [
-        'y=3x+C' for _ in range(N_EVENTS)]
+        'y=3x+C'] * N_EVENTS
     assert reader.scalars['value'].to_list()[:N_EVENTS] == [
         i * 2 for i in range(N_EVENTS)]
     assert reader.scalars['value'].to_list()[N_EVENTS:] == [
         i * 3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS * 2
-    assert reader.scalars['dir_name'].to_list(
-    ) == ['' for _ in range(N_EVENTS * 2)]
+    assert reader.scalars['dir_name'].to_list() == [''] * (N_EVENTS * 2)
     assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS * 2)]
+    ) == [event_filename] * (N_EVENTS * 2)
+    check_others(reader)
 
 def test_run_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
@@ -198,19 +203,16 @@ def test_run_dir(prepare, testdir):
         i for i in range(N_EVENTS)]
     assert reader.scalars['step'].to_list()[N_EVENTS:] == [
         i for i in range(N_EVENTS)]
-    assert reader.scalars['tag'].to_list()[:N_EVENTS] == [
-        'y=2x+C' for _ in range(N_EVENTS)]
-    assert reader.scalars['tag'].to_list()[N_EVENTS:] == [
-        'y=3x+C' for _ in range(N_EVENTS)]
+    assert reader.scalars['tag'].to_list()[:N_EVENTS] == ['y=2x+C'] * N_EVENTS
+    assert reader.scalars['tag'].to_list()[N_EVENTS:] == ['y=3x+C'] * N_EVENTS
     assert reader.scalars['value'].to_list()[:N_EVENTS] == [
         i * 2 for i in range(N_EVENTS)]
     assert reader.scalars['value'].to_list()[N_EVENTS:] == [
         i * 3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS * 2
-    assert reader.scalars['dir_name'].to_list(
-    ) == ['' for _ in range(N_EVENTS * 2)]
-    assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS * 2)]
+    assert reader.scalars['dir_name'].to_list() == [''] * (N_EVENTS * 2)
+    assert reader.scalars['file_name'].to_list() == [event_filename] * (N_EVENTS * 2)
+    check_others(reader)
     # Test pivot
     reader = SummaryReader(run_dir, pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
@@ -224,10 +226,9 @@ def test_run_dir(prepare, testdir):
                                                   3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS
     assert len(reader.scalars['wall_time'][0]) == 2
-    assert reader.scalars['dir_name'].to_list() == [
-        '' for _ in range(N_EVENTS)]
-    assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS)]
+    assert reader.scalars['dir_name'].to_list() == [''] * N_EVENTS
+    assert reader.scalars['file_name'].to_list() == [event_filename] * N_EVENTS
+    check_others(reader)
 
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
@@ -249,10 +250,9 @@ def test_log_dir(prepare, testdir):
             [j * 2 + i for j in range(N_EVENTS)]
         assert reader.scalars['y=3x+C'][s:e].to_list() == \
             [j * 3 + i for j in range(N_EVENTS)]
-        assert reader.scalars['dir_name'][s:e].to_list() == \
-            [f'run{i}' for _ in range(N_EVENTS)]
-        assert reader.scalars['file_name'][s:e].to_list() == \
-            [event_filename for _ in range(N_EVENTS)]
+        assert reader.scalars['dir_name'][s:e].to_list() == [f'run{i}'] * N_EVENTS
+        assert reader.scalars['file_name'][s:e].to_list() == [event_filename] * N_EVENTS
+    check_others(reader)
     # Test all columns
     reader = SummaryReader(log_dir, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
@@ -269,19 +269,16 @@ def test_log_dir(prepare, testdir):
             j for j in range(N_EVENTS)]
         assert reader.scalars['step'].to_list()[s2:e2] == [
             j for j in range(N_EVENTS)]
-        assert reader.scalars['tag'].to_list()[s1:e1] == [
-            'y=2x+C' for _ in range(N_EVENTS)]
-        assert reader.scalars['tag'].to_list()[s2:e2] == [
-            'y=3x+C' for _ in range(N_EVENTS)]
+        assert reader.scalars['tag'].to_list()[s1:e1] == ['y=2x+C'] * N_EVENTS
+        assert reader.scalars['tag'].to_list()[s2:e2] == ['y=3x+C'] * N_EVENTS
         assert reader.scalars['value'].to_list()[s1:e1] == [
             j * 2 + i for j in range(N_EVENTS)]
         assert reader.scalars['value'].to_list()[s2:e2] == [
             j * 3 + i for j in range(N_EVENTS)]
         assert len(reader.scalars['wall_time']) == N_RUNS * N_EVENTS * 2
-        assert reader.scalars['dir_name'][s1:e2].to_list() == \
-            [f'run{i}' for _ in range(N_EVENTS * 2)]
-        assert reader.scalars['file_name'][s1:e2].to_list() == \
-            [event_filename for _ in range(N_EVENTS * 2)]
+        assert reader.scalars['dir_name'][s1:e2].to_list() == [f'run{i}'] * (N_EVENTS * 2)
+        assert reader.scalars['file_name'][s1:e2].to_list() == [event_filename] * (N_EVENTS * 2)
+    check_others(reader)
     # Test pivot with all columns
     reader = SummaryReader(log_dir, pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
@@ -302,8 +299,8 @@ def test_log_dir(prepare, testdir):
         assert reader.scalars['y=3x+C'][s:e].to_list() == \
             [j * 3 + i for j in range(N_EVENTS)]
         assert len(reader.scalars['wall_time']) == N_RUNS * N_EVENTS
-        assert reader.scalars['dir_name'][s:e].to_list() == \
-            [f'run{i}' for _ in range(N_EVENTS)]
-        assert reader.scalars['file_name'][s:e].to_list() == \
-            [event_filename for _ in range(N_EVENTS)]
-
+        assert reader.scalars['dir_name'][s:e].to_list() == [f'run{i}'] * N_EVENTS
+        assert reader.scalars['file_name'][s:e].to_list() == [event_filename] * N_EVENTS
+    check_others(reader)
+# TODO: format assert should be tolist() == [\n...]
+# TODO: simplify event file name (helper func)

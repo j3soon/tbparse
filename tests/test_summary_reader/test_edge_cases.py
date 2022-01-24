@@ -61,10 +61,9 @@ def test_event_file(prepare, testdir):
                                                   3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS
     assert len(reader.scalars['wall_time'][0]) == 2
-    assert reader.scalars['dir_name'].to_list() == [
-        '' for _ in range(N_EVENTS)]
+    assert reader.scalars['dir_name'].to_list() == [''] * N_EVENTS
     assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS)]
+    ) == [event_filename] * N_EVENTS
 
 def test_event_types(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
@@ -91,3 +90,7 @@ def test_get_tags(prepare, testdir):
     reader = SummaryReader(run_dir)
     assert reader.tags['scalars'] == ['y=2x+C', 'y=3x+C']
     assert reader.get_tags('scalars') == ['y=2x+C', 'y=3x+C']
+
+# TODO: tags duplicate with file_name, dir_name, etc.
+# TODO: log single letter?
+# TODO: order difference when pd.concat

@@ -75,3 +75,11 @@ Generate test coverage:
 python3 -m pip install pandas tensorflow torch tensorboardX pytest pytest-cov
 python3 -m pytest --cov=./ --cov-report html
 ```
+
+## License
+
+tbparse is distributed under the [MIT License](LICENSE).
+
+The tbparse PyPI package depends upon (imports) the following third-party package. Each third-party software package is provided under its own license:
+- [pandas](https://github.com/pandas-dev/pandas) is distributed under the [BSD-3-Clause License ](https://github.com/pandas-dev/pandas/blob/main/LICENSE)
+- [tensorboard](https://github.com/tensorflow/tensorboard) is distributed under the [Apache License 2.0](https://github.com/tensorflow/tensorboard/blob/master/LICENSE)
