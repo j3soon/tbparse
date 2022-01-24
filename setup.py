@@ -41,6 +41,6 @@ setuptools.setup(
     extras_require={
         'testing': ['pytest', 'mypy', 'flake8', 'pylint', 'sphinx',
                     'sphinx-rtd-theme', 'torch', 'tensorboardX', 'seaborn',
-                    'pytest-cov'],
+                    'pytest-cov', 'sphinx-tabs'],
     },
 )

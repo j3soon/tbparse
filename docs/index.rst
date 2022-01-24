@@ -20,8 +20,7 @@ tbparse documentation
 .. image:: https://img.shields.io/pypi/pyversions/tbparse
    :target: https://pypi.org/project/tbparse/
 
-A simple yet powerful tensorboard event log parser for data scientists or
-researchers that uses tensorboard:
+A simple yet powerful tensorboard event log parser/reader:
 
 * Supports parsing tensorboard event :ref:`scalars <tbparse_parsing-scalars>`,
   :ref:`tensors <tbparse_parsing-tensors>`,
@@ -37,6 +36,7 @@ researchers that uses tensorboard:
   `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
   to allow advanced filtering.
 * Both the documentation and code have high test coverage rate.
+* Follows `PEP 484 <https://www.python.org/dev/peps/pep-0484/>`_ with full type hints.
 
 Installation: (Requires python >= 3.7)
 

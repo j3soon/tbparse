@@ -6,3 +6,4 @@ tensorboardX
 sphinx
 seaborn
 sphinx_rtd_theme
+sphinx-tabs

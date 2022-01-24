@@ -3,48 +3,60 @@ Provides a `SummaryReader` class that will read all tensorboard events and
 summaries in a directory contains multiple event files, or a single event file.
 """
 
-import os
 import copy
+import os
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorboard.backend.event_processing.event_accumulator import \
-    EventAccumulator, HISTOGRAMS, SCALARS, TENSORS, \
-    STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
+from tensorboard.backend.event_processing.event_accumulator import (
+    AUDIO, COMPRESSED_HISTOGRAMS, HISTOGRAMS, IMAGES, SCALARS,
+    STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, EventAccumulator, HistogramEvent,
+    ScalarEvent, TensorEvent)
 
 # from tensorboard.backend.event_processing.event_accumulator import \
 #     EventAccumulator, IMAGES, AUDIO, HISTOGRAMS, SCALARS, \
 #     COMPRESSED_HISTOGRAMS, TENSORS, GRAPH, META_GRAPH, RUN_METADATA, \
 #     STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
 
-HPARAMS = 'hparams'
+# HPARAMS = 'hparams'
+
+MINIMUM_SIZE_GUIDANCE = {
+    COMPRESSED_HISTOGRAMS: 1,
+    IMAGES: 1,
+    AUDIO: 1,
+    SCALARS: 1,
+    HISTOGRAMS: 1,
+    TENSORS: 1,
+}
+
+ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS}
+ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max',
+                     'num', 'sum', 'sum_squares'}
 
 
 class SummaryReader():
     """
-    Creates a `SummaryReader` that will read all tensorboard events and
-    summaries in a directory contains multiple event files, or a single event
-    file.
+    Creates a `SummaryReader` that reads all tensorboard events and summaries
+    stored in a event file or a directory containing multiple event files.
     """
 
-    def __init__(self, log_path: str, **kwargs):
-        """The constructor of SummaryReader.
+    def __init__(self, log_path: str, *, pivot=False, extra_columns=None,
+                 event_types=None):
+        """The constructor of SummaryReader. Columns contains `step`, `tag`, \
+           and `value` by default.
 
         :param log_path: Load directory location, or load file location.
         :type log_path: str
 
-        :param \\**kwargs:
-            Additional keywords to control the data columns.
-        :Keyword Args:
-            - **cols** (*Set[{'tag', 'dir_name', 'file_name', 'wall_time', \
-                'hparams/`key`']}*) -- \
-                Specifies additional required columns, defaults to {}.
+        :param pivot: Returns long format DataFrame by default, \
+                returns wide format DataFrame if set to True. If there are \
+                multiple values per step with the same tag, the values are \
+                merged into a list.
+        :type pivot: bool
 
-                - (default): has columns `step`, `tag`, and `value`.
-                - tag:       replaces the individual tag columnss with \
-                             `tag` and `value` columns.
+        :param extra_columns: Specifies extra columns, defaults to `None`.
                 - dir_name:  add a column that contains the relative \
                              directory path.
                 - file_name: add a column that contains the relative \
@@ -55,48 +67,62 @@ class SummaryReader():
                 - num (histogram): the number of values.
                 - sum (histogram): the sum of all values.
                 - sum_squares (histogram): the sum of squares for all values.
-        """
-        for k in kwargs:
-            if k not in {'cols'}:
-                raise KeyError(f"Invalid kwargs key: {k}")
+        :type extra_columns: Set[{'dir_name', 'file_name', 'wall_time', \
+                'min', 'max', 'num', 'sum', 'sum_squares'}]
 
+        :param event_types: Specifies the event types to parse, \
+            defaults to all event types.
+        :type event_types: Set[{'scalars', 'tensors', 'histograms'}]
+        """
         self._log_path: str = log_path
         """Load directory location, or load file location."""
-        self._tag_style: str = 'auto'
-        self._cache_mode: str = 'root'
-        self._cols: Set[str] = kwargs.get('cols', set()).copy()
-        if not isinstance(self._cols, set):
-            raise ValueError("`cols` should be a <class 'set'> instead of " +
-                             str(type(self._cols)))
+        self._extra_columns: Set[str] = (extra_columns or set()).copy()
+        """Specifies additional required columns."""
+        if not isinstance(self._extra_columns, set):
+            raise ValueError(f"`columns` should be a {set} instead of \
+                              {str(type(self._extra_columns))}")
+        diff = self._extra_columns - ALL_EXTRA_COLUMNS
+        if len(diff) > 0:
+            raise KeyError(f"Invalid columns entries: {diff}")
+        self._pivot: bool = pivot
+        """Determines whether the DataFrame is stored in wide format."""
+        self._event_types: Set[str] = (event_types or ALL_EVENT_TYPES).copy()
+        """Specifies the event types to parse."""
+        if not isinstance(self._event_types, set):
+            raise ValueError(f"`event_types` should be a {set} instead of \
+                              {str(type(self._event_types))}")
+        diff = self._event_types - ALL_EVENT_TYPES
+        if len(diff) > 0:
+            raise KeyError(f"Invalid event types: {diff}")
         self._children: Dict[str, 'SummaryReader'] = {}
         """Holds a list of references to the `SummaryReader` children."""
 
         self._tags: Optional[Dict[str, List[str]]] = None
-        """Caches a dictionary contatining a list of parsed tag names for each
+        """Stores a dictionary contatining a list of parsed tag names for each
         event type."""
         self._events: Dict[str, pd.DataFrame] = self._make_empty_dict(None)
-        """Caches a `pandas.DataFrame` storing all events."""
+        """Stores a `pandas.DataFrame` containing all events."""
 
         if not os.path.exists(self.log_path):
             raise ValueError(f"File or directory not found: {self.log_path}")
         if os.path.isfile(self.log_path):
             # Note: tensorflow.python.summary.summary_iterator is less
             #       straightforward, so we use EventAccumulator instead.
-            event_acc = EventAccumulator(
-                self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
+            size_guidance = MINIMUM_SIZE_GUIDANCE.copy()
+            for e in self._event_types:
+                size_guidance[e] = 0  # store everything
+            event_acc = EventAccumulator(self.log_path, size_guidance)
             event_acc.Reload()
             self._tags = self._make_empty_dict([])
-            self._parse_events(SCALARS, event_acc=event_acc)
-            self._parse_events(TENSORS, event_acc=event_acc)
-            self._parse_events(HISTOGRAMS, event_acc=event_acc)
+            for e in self._event_types:
+                self._parse_events(e, event_acc=event_acc)
         else:
             # Populate children
             for filename in sorted(os.listdir(self.log_path)):
                 filepath = os.path.join(self.log_path, filename)
-                r = SummaryReader(
-                    filepath,
-                    cols=self._cols,
-                )
+                r = SummaryReader(filepath,
+                                  pivot=self._pivot,
+                                  extra_columns=self._extra_columns)
                 self._children[filename] = r
 
     @property
@@ -113,74 +139,101 @@ class SummaryReader():
         """Returns a dictionary contatining a list of parsed tag names for each
         event type.
 
-        :return: A `{tagType: ['list', 'of', 'tags']}` dictionary.
+        :return: A `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: Dict[str, List[str]]
         """
         return cast(Dict[str, List[str]], self.get_tags())
 
-    def get_tags(self, tag_type: str = None) -> \
+    def get_tags(self, event_type: str = None) -> \
             Union[List[str], Dict[str, List[str]]]:
         """Returns a list of tag names for the specified event type. If
         `event_type` is None, return a dictionary containing a list of tag
         names for each event type.
 
-        :param tag_type: the event type to retrieve, None means return all, \
+        :param event_type: the event type to retrieve, None means return all, \
         defaults to None.
-        :type tag_type: {None, 'histograms', 'scalars', 'distributions', \
-            'tensors', 'hparams'}, optional
-        :raises ValueError: if `tag_type` is unknown.
+        :type event_type: {None, 'histograms', 'scalars', 'tensors'}, optional
+        :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
-            `{tagType: ['list', 'of', 'tags']}` dictionary.
+            `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: List[str] | Dict[str, List[str]]
         """
-        if tag_type not in {None, 'histograms', 'scalars', 'distributions',
-                            'tensors', 'hparams'}:
-            raise ValueError(f"Unknown tag_type: {tag_type}")
+        if event_type not in {None, 'histograms', 'scalars', 'tensors'}:
+            raise ValueError(f"Unknown event_type: {event_type}")
         if self._tags is not None:
-            if tag_type is not None:
-                return self._tags[tag_type].copy()
+            # Leaf node returns directly
+            if event_type is not None:
+                return self._tags[event_type].copy()
             return copy.deepcopy(self._tags)
+        # Non-leaf node collects children's tags then return
         tags = self._make_empty_dict([])
-        if tag_type is not None:
-            # Only keep specified tag type
-            tags = {tag_type: tags[tag_type]}
+        if event_type is not None:
+            # Only collect the specified event type
+            tags = {event_type: tags[event_type]}
         for t in tags:
             for c in self.children.values():
-                # Combine lists
+                # Collect children's tags
                 tags[t] += c.get_tags(t)
             # Deduplicate same tag names
             tags[t] = list(dict.fromkeys(tags[t]))
-        if tag_type is not None:
-            return tags[tag_type]
+        if event_type is not None:
+            return tags[event_type]
         return tags
 
-    def get_events(self, tag_type: str) -> pd.DataFrame:
-        """Construct a `pandas.DataFrame` that stores all `tag_type` events \
+    @staticmethod
+    def _merge_values(s: pd.Series):
+        """Merge multiple values. Ignore NaNs, concat others."""
+        # Note:
+        # Does not support python3.6 since DataFrame does not fully support
+        # `np.ndarray` as an element in cell. See the following:
+        # lib/python3.6/site-packages/pandas/core/groupby/generic.py:482
+        # Python 3.6 EOL: 2021-12-23 (https://www.python.org/downloads/)
+        assert isinstance(s, pd.Series)
+        x: List[Any] = list(s)
+        lst = []
+        for xx in x:
+            if isinstance(xx, list):
+                lst.extend(xx)
+            elif np.isscalar(xx):
+                if not np.isnan(xx):
+                    lst.append(xx)
+            else:
+                lst.append(xx)
+        if len(lst) == 0:
+            return np.nan
+        if len(lst) == 1:
+            return lst[0]
+        return lst
+
+    def get_events(self, event_type: str) -> pd.DataFrame:
+        """Construct a `pandas.DataFrame` that stores all `event_type` events \
         under `log_path`. Some processing is performed when evaluating this \
         property. Therefore you may want to store the results and reuse it \
         for better performance.
 
-        :type tag_type: {None, 'histograms', 'scalars', 'distributions', \
-            'tensors', 'hparams'}.
-        :raises ValueError: if `tag_type` is unknown.
-        :return: A `DataFrame` storing all `tag_type` events.
+        :type event_type: {None, 'histograms', 'scalars', 'tensors'}.
+        :raises ValueError: if `event_type` is unknown.
+        :return: A `DataFrame` storing all `event_type` events.
         :rtype: pandas.DataFrame
         """
-        if tag_type not in {SCALARS, TENSORS, HISTOGRAMS}:
-            raise ValueError(f"Unknown tag_type: {tag_type}")
-        group_cols = []
+        if event_type not in ALL_EVENT_TYPES:
+            raise ValueError(f"Unknown event_type: {event_type}")
+        group_columns = []
         for c in ['dir_name', 'file_name']:
-            if c in self._cols:
-                group_cols.append(c)
-        group_cols.append('step')
+            if c in self._extra_columns:
+                group_columns.append(c)
+        group_columns.append('step')
 
+        dfs = []
         if os.path.isfile(self.log_path):
-            dfs = [self._events[tag_type]]
+            # Leaf node appends events directly
+            dfs.append(self._events[event_type])
         else:
-            dfs = []
+            # Non-leaf node collects children's events
             for child in self._children.values():
-                df = child.get_events(tag_type)
-                if 'dir_name' in self._cols and \
+                df = child.get_events(event_type)
+                # iteratively prepend dir_name
+                if 'dir_name' in self._extra_columns and \
                         os.path.isdir(child.log_path):
                     dir_name = os.path.basename(child.log_path)
                     df_cond = (df['dir_name'] == '')
@@ -188,52 +241,32 @@ class SummaryReader():
                     df.loc[~df_cond, 'dir_name'] = \
                         dir_name + '/' + df.loc[~df_cond, 'dir_name']
                 dfs.append(df)
-        df_stacked = pd.concat(dfs, ignore_index=True)
-        if len(dfs) == 0 or df_stacked.empty:
+        dfs = list(filter(lambda x: x is not None, dfs))
+        if len(dfs) == 0:
             return pd.DataFrame()
-        if 'tag' in self._cols:
-            if len(group_cols) == 1:
-                return df_stacked
-            group_cols = group_cols[:-1]
-            group_cols.extend(['tag', 'step'])
-            df_stacked.sort_values(group_cols, ignore_index=True, inplace=True)
-            return df_stacked
+        df_stacked = pd.concat(dfs, ignore_index=True)
+        if df_stacked.empty:
+            return pd.DataFrame()
+        if not self._pivot:
+            group_columns = group_columns[:-1]
+            group_columns.extend(['tag', 'step'])
+            df_stacked.sort_values(group_columns, ignore_index=True,
+                                   inplace=True)
+            return df_stacked  # keep original order since no merging occurs
 
-        def merge(x):
-            """Merge multiple columns. Ignore NaNs, concat others."""
-            # Note:
-            # Does not support python3.6 since it does not fully support
-            # `np.ndarray` as an element in cell. See the following:
-            # lib/python3.6/site-packages/pandas/core/groupby/generic.py:482
-            # Python 3.6 EOF: 2021-12-23 (https://www.python.org/downloads/)
-            assert isinstance(x, pd.Series)
-            x: List[Any] = list(x)
-            lst = []
-            for xx in x:
-                if isinstance(xx, list):
-                    lst.extend(xx)
-                elif np.isscalar(xx):
-                    if not np.isnan(xx):
-                        lst.append(xx)
-                else:
-                    lst.append(xx)
-            if len(lst) == 0:
-                return np.nan
-            if len(lst) == 1:
-                return lst[0]
-            return lst
-        df_stacked.sort_values(group_cols, ignore_index=True, inplace=True)
-        grouped = df_stacked.groupby(group_cols, sort=False)
-        df = grouped.agg(merge)
+        df_stacked.sort_values(group_columns, ignore_index=True, inplace=True)
+        # Merge if there are multiple values per step with the same tag
+        grouped = df_stacked.groupby(group_columns, sort=False)
+        df = grouped.agg(self._merge_values)
         df.reset_index(inplace=True)
         # Reorder columns
-        cols = [x for x in df.columns if x not in
-                ['step', 'wall_time', 'dir_name', 'file_name']]
-        cols = ['step'] + cols
+        columns = [x for x in df.columns if x not in
+                   ['step', 'wall_time', 'dir_name', 'file_name']]
+        columns = ['step'] + columns
         for c in ['wall_time', 'dir_name', 'file_name']:
-            if c in self._cols:
-                cols.append(c)
-        return df[cols]  # reorder
+            if c in self._extra_columns:
+                columns.append(c)
+        return df[columns]  # reorder
 
     @property
     def scalars(self) -> pd.DataFrame:
@@ -272,8 +305,7 @@ class SummaryReader():
         return self.get_events(HISTOGRAMS)
 
     @staticmethod
-    def buckets_to_histogram_dict(lst: List[List[float]]) -> \
-            Dict[str, Any]:
+    def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
         """Convert a list of buckets to histogram dictionary.
 
         :param lst: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
@@ -288,11 +320,12 @@ class SummaryReader():
             limits.append(e[0])
             counts.append(e[2])
         limits.append(lst[-1][1])
+        assert len(limits) == len(counts) + 1
         d = {
             'limits': np.array(limits),
             'counts': np.array(counts),
-            'min': lst[0][0],
-            'max': lst[-1][1],
+            'min': limits[0],
+            'max': limits[-1],
             'num': np.sum(counts),
             'sum': np.nan,
             'sum_squares': np.nan,
@@ -318,9 +351,9 @@ class SummaryReader():
         :rtype: Tuple[np.ndarray, np.ndarray]
         """
         y = SummaryReader.histogram_to_cdf(counts, limits, x)
-        new_x = (x[1:]+x[:-1])/2
-        new_y = (y[1:]-y[:-1])/(x[1:]-x[:-1])
-        return new_x, new_y
+        center = (x[1:]+x[:-1])/2
+        density = (y[1:]-y[:-1])/(x[1:]-x[:-1])
+        return center, density
 
     @staticmethod
     def histogram_to_cdf(counts: np.ndarray, limits: np.ndarray,
@@ -345,15 +378,18 @@ class SummaryReader():
         x = np.array(x)
         # x must be increasing
         assert np.all(np.diff(x) > 0)
-        y: List[int] = []
 
         cumsum = np.cumsum(counts)
         cumsum = np.insert(cumsum, 0, [0])
+        assert len(cumsum) == len(limits)
 
+        y: List[int] = []
+        # Calculate y[i], where x[i] <= limits[0]
         i = 0
         while i < len(x) and x[i] <= limits[0]:
             y.append(0)
             i += 1
+        # Calculate y[i], where limits[0] < x[i] <= limits[-1]
         idx = 0
         while i < len(x) and idx + 1 < len(limits):
             if limits[idx+1] < x[i]:
@@ -365,41 +401,41 @@ class SummaryReader():
             assert (x[i] - lower) > 0
             interp = (cumsum[idx] * (upper - x[i]) +
                       cumsum[idx+1] * (x[i] - lower))
-            interp = interp / (upper - lower)
+            interp /= (upper - lower)
             y.append(interp)
             i += 1
+        # Calculate y[i], where limits[-1] < x[i]
         while i < len(x):
             y.append(n)
             i += 1
-        return np.array(y) / np.sum(counts)
+        return np.array(y) / n
 
-    def _add_cols_scalar(self, d: Dict[str, Any], tag: str, e: ScalarEvent):
+    def _add_columns_scalar(self, d: Dict[str, Any], tag: str, e: ScalarEvent):
         """Add entries in dictionary `d` based on the ScalarEvent `e`"""
-        if 'tag' in self._cols:
+        if self._pivot:
+            d[tag] = e.value
+        else:
             d['tag'] = tag
             d['value'] = e.value
-        else:
-            d[tag] = e.value
 
-    def _add_cols_tensor(self, d: Dict[str, Any], tag: str, e: TensorEvent):
+    def _add_columns_tensor(self, d: Dict[str, Any], tag: str, e: TensorEvent):
         """Add entries in dictionary `d` based on the TensorEvent `e`"""
         value = tf.make_ndarray(e.tensor_proto)
         if value.shape == ():
             value = value.item()
-        if 'tag' in self._cols:
+        if self._pivot:
+            d[tag] = value
+        else:
             d['tag'] = tag
             d['value'] = value
-        else:
-            d[tag] = value
 
-    def _add_cols_histograms(self, d: Dict[str, Any], tag: str,
-                             e: HistogramEvent):
+    def _add_columns_histograms(self, d: Dict[str, Any], tag: str,
+                                e: HistogramEvent):
         """Add entries in dictionary `d` based on the HistogramEvent `e`"""
         hv = e.histogram_value
-        limits = np.array([hv.min] + hv.bucket_limit,
-                          dtype=np.float64)
+        limits = np.array([hv.min] + hv.bucket_limit, dtype=np.float64)
         counts = np.array(hv.bucket, dtype=np.float64)
-        cols = {
+        columns = {
             'limits': limits,
             'counts': counts,
             'min': hv.min,
@@ -408,16 +444,16 @@ class SummaryReader():
             'sum': hv.sum,
             'sum_squares': hv.sum_squares,
         }
-        if 'tag' in self._cols:
+        if not self._pivot:
             d['tag'] = tag
-        lst = list(self._cols) + ['limits', 'counts']
-        for k, v in cols.items():
+        lst = list(self._extra_columns) + ['limits', 'counts']
+        for k, v in columns.items():
             if k in lst:
-                key = k if 'tag' in self._cols else tag + '/' + k
+                key = k if not self._pivot else tag + '/' + k
                 d[key] = v
 
-    def _parse_events(self, tag_type: str, event_acc: EventAccumulator):
-        """Parse and store `tag_type` events inside a event file.
+    def _parse_events(self, event_type: str, event_acc: EventAccumulator):
+        """Parse and store `event_type` events inside a event file.
 
         :param event_acc: A loaded `EventAccumulator` for parsing events.
         :type event_acc: EventAccumulator
@@ -427,34 +463,34 @@ class SummaryReader():
             raise ValueError(f"Not an event file: {self.log_path}")
         rows = []
         assert self._tags is not None
-        self._tags[tag_type] = event_acc.Tags()[tag_type]
-        # Add columns that depend on tag types
-        if tag_type == SCALARS:
-            add_cols = self._add_cols_scalar
+        self._tags[event_type] = event_acc.Tags()[event_type]
+        # Add columns that depend on event types
+        if event_type == SCALARS:
+            add_columns = self._add_columns_scalar
             getter = event_acc.Scalars
-        elif tag_type == TENSORS:
-            add_cols = self._add_cols_tensor
+        elif event_type == TENSORS:
+            add_columns = self._add_columns_tensor
             getter = event_acc.Tensors
-        elif tag_type == HISTOGRAMS:
-            add_cols = self._add_cols_histograms
+        elif event_type == HISTOGRAMS:
+            add_columns = self._add_columns_histograms
             getter = event_acc.Histograms
         else:
-            raise ValueError(f"Unknown tag_type: {tag_type}")
+            raise ValueError(f"Unknown event_type: {event_type}")
         # Add shared columns
-        for tag in self._tags[tag_type]:
+        for tag in self._tags[event_type]:
             events = getter(tag)
             for e in events:
                 d = {'step': e.step}
-                add_cols(d, tag, e)
-                if 'wall_time' in self._cols:
+                add_columns(d, tag, e)
+                if 'wall_time' in self._extra_columns:
                     d['wall_time'] = e.wall_time
-                if 'dir_name' in self._cols:
+                if 'dir_name' in self._extra_columns:
                     d['dir_name'] = ''
-                if 'file_name' in self._cols:
+                if 'file_name' in self._extra_columns:
                     d['file_name'] = os.path.basename(self.log_path)
                 rows.append(d)
         df = pd.DataFrame(rows)
-        self._events[tag_type] = df
+        self._events[event_type] = df
 
     @property
     def children(self) -> Dict[str, 'SummaryReader']:
@@ -473,41 +509,41 @@ class SummaryReader():
         """Returns a dictionary containing a list of raw tags for each raw event type.
         This property is only supported when `log_path` is a event file.
 
-        :return: A `{tagType: ['list', 'of', 'tags']}` dictionary.
+        :return: A `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: Dict[str, List[str]]
         """
         return cast(Dict[str, List[str]], self.get_raw_tags())
 
-    def get_raw_tags(self, tag_type: str = None) -> \
+    def get_raw_tags(self, event_type: str = None) -> \
             Union[List[str], Dict[str, List[str]]]:
         """Returns a list of raw tags for the specified raw event type. If
         `event_type` is None, return a dictionary containing a list of raw
         tags for each raw event type. This function is only supported when
         `log_path` is a event file.
 
-        :param tag_type: the event type to retrieve, None means return all, \
+        :param event_type: the event type to retrieve, None means return all, \
             defaults to None.
-        :type tag_type: {None, 'images', 'audio', 'histograms', 'scalars', \
-            'distributions', 'tensors', 'graph', 'meta_graph', 'run_metadata' \
+        :type event_type: {None, 'images', 'audio', 'histograms', 'scalars', \
+            'tensors', 'graph', 'meta_graph', 'run_metadata' \
             }, optional
         :raises ValueError: if `log_path` is a directory.
-        :raises ValueError: if `tag_type` is unknown.
+        :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
-            `{tagType: ['list', 'of', 'tags']}` dictionary.
+            `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: List[str] | Dict[str, List[str]]
         """
-        if tag_type not in {None, 'images', 'audio', 'histograms', 'scalars',
-                            'distributions', 'tensors', 'graph', 'meta_graph',
-                            'run_metadata'}:
-            raise ValueError(f"Unknown tag_type: {tag_type}")
+        if event_type not in {None, 'images', 'audio', 'histograms', 'scalars',
+                              'tensors', 'graph', 'meta_graph',
+                              'run_metadata'}:
+            raise ValueError(f"Unknown event_type: {event_type}")
         if os.path.isdir(self.log_path):
             raise ValueError(f"Not an event file: {self.log_path}")
         event_acc = EventAccumulator(
             self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
         event_acc.Reload()
-        if tag_type is None:
+        if event_type is None:
             return event_acc.Tags()
-        return event_acc.Tags()[tag_type]
+        return event_acc.Tags()[event_type]
 
     @property
     def raw_events(self) -> Dict[str, Dict[str, List[Any]]]:
@@ -515,26 +551,26 @@ class SummaryReader():
         raw events for each raw event type.
         This property is only supported when `log_path` is a event file.
 
-        :return: A `{tagType: {tag: ['list', 'of', 'events']}}` dictionary.
+        :return: A `{eventType: {tag: ['list', 'of', 'events']}}` dictionary.
         :rtype: Dict[str, Dict[str, List[Any]]]
         """
         return cast(Dict[str, Dict[str, List[Any]]], self.get_raw_events())
 
-    def get_raw_events(self, tag_type: str = None, tag: str = None) \
-            -> Union[List[Any], List[List[Any]],
-                     Dict[str, List[List[Any]]]]:
+    def get_raw_events(self, event_type: str = None, tag: str = None) \
+            -> Union[List[Any], Dict[str, List[Any]],
+                     Dict[str, Dict[str, List[Any]]]]:
         """Returns a list of raw events for the specified raw event type. If
         `tag` is None, return a dictionary containing a list of raw events for
-        each raw event type. If `tag_type` is None, return a dictionary of
+        each raw event type. If `event_type` is None, return a dictionary of
         dictionary containing a list of raw events for each raw event type.
         This function is only supported when `log_path` is a event file.
 
         :raises ValueError: if `log_path` is a directory.
-        :raises KeyError: if `tag_type` is unknown.
+        :raises KeyError: if `event_type` is unknown.
         :raises KeyError: If the `tag` is not found.
         :return: A `['list', 'of', 'events']` list, or a \
             `{tag: ['list', 'of', 'events']}` dictionary, or a \
-            `{tagType: {tag: ['list', 'of', 'events']}}` dictionary.
+            `{eventType: {tag: ['list', 'of', 'events']}}` dictionary.
         :rtype: List[Any] | Dict[str, List[Any]] | \
                 Dict[str, Dict[str, List[Any]]]
         """
@@ -543,27 +579,29 @@ class SummaryReader():
         event_acc = EventAccumulator(
             self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
         event_acc.Reload()
-        if tag_type is None:
+        if event_type is None:
+            # Return all event types by recursion
             if tag is not None:
-                raise ValueError("tag shouldn't be set if tag_type is None")
+                raise ValueError("tag shouldn't be set if event_type is None")
             lst = self._make_empty_dict([])
             for t in lst:
+                # Collect children's events
                 events = self.get_raw_events(t)
-                lst[t] = cast(List[List[Any]], events)
+                lst[t] = cast(Dict[str, List[Any]], events)
             return lst  # dict of dict containing list of events
-        if tag_type == SCALARS:
+        # Only collect the specified event type
+        if event_type == SCALARS:
             getter = event_acc.Scalars
-        elif tag_type == TENSORS:
+        elif event_type == TENSORS:
             getter = event_acc.Tensors
-        elif tag_type == HISTOGRAMS:
+        elif event_type == HISTOGRAMS:
             getter = event_acc.Histograms
         else:
-            raise KeyError(f"Unknown tag_type: {tag_type}")
+            raise KeyError(f"Unknown event_type: {event_type}")
         if tag is not None:
-            # list of events
-            return getter(tag)
+            return getter(tag)  # list of events
         ret = {}
-        for t in event_acc.Tags()[tag_type]:
+        for t in event_acc.Tags()[event_type]:
             ret[t] = getter(t)
         return ret  # dict containing list of events
 
