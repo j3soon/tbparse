@@ -227,9 +227,7 @@ class SummaryReader():
         dfs = []
         if os.path.isfile(self.log_path):
             # Leaf node appends events directly
-            df = self._events[event_type]
-            if df is not None:
-                dfs.append(df)
+            dfs.append(self._events[event_type])
         else:
             # Non-leaf node collects children's events
             for child in self._children.values():
@@ -242,8 +240,8 @@ class SummaryReader():
                     df.loc[df_cond, 'dir_name'] = dir_name
                     df.loc[~df_cond, 'dir_name'] = \
                         dir_name + '/' + df.loc[~df_cond, 'dir_name']
-                if df is not None:
-                    dfs.append(df)
+                dfs.append(df)
+        dfs = list(filter(lambda x: x is not None, dfs))
         if len(dfs) == 0:
             return pd.DataFrame()
         df_stacked = pd.concat(dfs, ignore_index=True)
@@ -535,7 +533,8 @@ class SummaryReader():
         :rtype: List[str] | Dict[str, List[str]]
         """
         if event_type not in {None, 'images', 'audio', 'histograms', 'scalars',
-                            'tensors', 'graph', 'meta_graph', 'run_metadata'}:
+                              'tensors', 'graph', 'meta_graph',
+                              'run_metadata'}:
             raise ValueError(f"Unknown event_type: {event_type}")
         if os.path.isdir(self.log_path):
             raise ValueError(f"Not an event file: {self.log_path}")
