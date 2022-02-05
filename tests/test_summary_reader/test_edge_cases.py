@@ -52,18 +52,14 @@ def test_event_file(prepare, testdir):
     reader = SummaryReader(run_dir, pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert len(reader.children) == 2
-    assert reader.scalars.columns.to_list(
-    ) == ['step', 'y=2x+C', 'y=3x+C', 'wall_time', 'dir_name', 'file_name']
+    assert reader.scalars.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'wall_time', 'dir_name', 'file_name']
     assert reader.scalars['step'].to_list() == [i for i in range(N_EVENTS)]
-    assert reader.scalars['y=2x+C'].to_list() == [i *
-                                                  2 for i in range(N_EVENTS)]
-    assert reader.scalars['y=3x+C'].to_list() == [i *
-                                                  3 for i in range(N_EVENTS)]
+    assert reader.scalars['y=2x+C'].to_list() == [i * 2 for i in range(N_EVENTS)]
+    assert reader.scalars['y=3x+C'].to_list() == [i * 3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS
     assert len(reader.scalars['wall_time'][0]) == 2
     assert reader.scalars['dir_name'].to_list() == [''] * N_EVENTS
-    assert reader.scalars['file_name'].to_list(
-    ) == [event_filename] * N_EVENTS
+    assert reader.scalars['file_name'].to_list() == [event_filename] * N_EVENTS
 
 def test_event_types(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')

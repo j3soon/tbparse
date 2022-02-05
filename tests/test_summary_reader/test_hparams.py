@@ -156,8 +156,7 @@ def test_event_file_raw(prepare, testdir):
     # - Test `raw_events` and `get_raw_events`
     assert reader.raw_events == reader.get_raw_events()
     assert reader.raw_events['scalars'] == reader.get_raw_events('scalars')
-    assert reader.raw_events['scalars']['metric'] == reader.get_raw_events(
-        'scalars', 'metric')
+    assert reader.raw_events['scalars']['metric'] == reader.get_raw_events('scalars', 'metric')
     # - Test raw event count & type
     events: List[ScalarEvent] = reader.get_raw_events('scalars', 'metric')
     assert len(events) == 1
@@ -272,24 +271,20 @@ def test_event_file(prepare, testdir):
     # all columns
     reader = SummaryReader(tmpinfo['hp_file'], extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    assert reader.hparams.columns.to_list() == [
-        'tag', 'value', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['tag', 'value', 'dir_name', 'file_name']
     assert reader.hparams['tag'].to_list() == ['name', 'run_id']
     assert reader.hparams['value'].to_list() == ['test', 0.0]
     assert reader.hparams['dir_name'].to_list() == [""] * 2
-    assert reader.hparams['file_name'].to_list() == \
-        [tmpinfo['hp_filename']] * 2
+    assert reader.hparams['file_name'].to_list() == [tmpinfo['hp_filename']] * 2
     check_others(reader)
     # pivot & all columns
     reader = SummaryReader(tmpinfo['hp_file'], pivot=True, extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    assert reader.hparams.columns.to_list() == [
-        'name', 'run_id', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['name', 'run_id', 'dir_name', 'file_name']
     assert reader.hparams['name'].to_list() == ['test']
     assert reader.hparams['run_id'].to_list() == [0.0]
     assert reader.hparams['dir_name'].to_list() == [""]
-    assert reader.hparams['file_name'].to_list() == [
-        tmpinfo['hp_filename']]
+    assert reader.hparams['file_name'].to_list() == [tmpinfo['hp_filename']]
     check_others(reader)
 
 def test_run_dir(prepare, testdir):
@@ -301,10 +296,8 @@ def test_run_dir(prepare, testdir):
     assert reader.hparams['tag'].to_list() == ['name', 'run_id']
     assert reader.hparams['value'].to_list() == ['test', 0.0]
     # - test metric
-    assert reader.scalars['tag'].to_list() == ['metric'] + \
-        ['y=2x+C'] * N_EVENTS
-    assert reader.scalars['value'].to_list() == [0.0] + [
-        i * 2 for i in range(N_EVENTS)]
+    assert reader.scalars['tag'].to_list() == ['metric'] + ['y=2x+C'] * N_EVENTS
+    assert reader.scalars['value'].to_list() == [0.0] + [i * 2 for i in range(N_EVENTS)]
     check_others(reader)
     # pivot
     reader = SummaryReader(tmpinfo['run_dir'], pivot=True)
@@ -315,19 +308,16 @@ def test_run_dir(prepare, testdir):
     # all columns
     reader = SummaryReader(tmpinfo['run_dir'], extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    assert reader.hparams.columns.to_list() == [
-        'tag', 'value', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['tag', 'value', 'dir_name', 'file_name']
     assert reader.hparams['tag'].to_list() == ['name', 'run_id']
     assert reader.hparams['value'].to_list() == ['test', 0.0]
     assert reader.hparams['dir_name'].to_list() == [tmpinfo['hp_dirname']] * 2
-    assert reader.hparams['file_name'].to_list() == \
-        [tmpinfo["hp_filename"]] * 2
+    assert reader.hparams['file_name'].to_list() == [tmpinfo["hp_filename"]] * 2
     check_others(reader)
     # pivot & all columns
     reader = SummaryReader(tmpinfo['run_dir'], pivot=True, extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    assert reader.hparams.columns.to_list() == [
-        'name', 'run_id', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['name', 'run_id', 'dir_name', 'file_name']
     assert reader.hparams['name'].to_list() == ['test']
     assert reader.hparams['run_id'].to_list() == [0.0]
     assert reader.hparams['dir_name'].to_list() == [tmpinfo['hp_dirname']]
@@ -342,15 +332,11 @@ def test_log_dir(prepare, testdir):
     reader = SummaryReader(tmpinfo['log_dir'])
     # - test hparams
     assert reader.hparams.columns.to_list() == ['tag', 'value']
-    assert reader.hparams['tag'].to_list() == ['name'] * N_RUNS + \
-        ['run_id'] * N_RUNS
-    assert reader.hparams['value'].to_list() == ['test'] * N_RUNS + \
-        [float(i) for i in range(N_RUNS)]
+    assert reader.hparams['tag'].to_list() == ['name'] * N_RUNS + ['run_id'] * N_RUNS
+    assert reader.hparams['value'].to_list() == ['test'] * N_RUNS + [float(i) for i in range(N_RUNS)]
     # - test metric
-    assert reader.scalars['tag'].to_list() == ['metric'] * N_RUNS + [
-        'y=2x+C'] * (N_RUNS * N_EVENTS)
-    assert reader.scalars['value'].to_list()[:N_RUNS] == \
-        [float(i) for i in range(N_RUNS)]
+    assert reader.scalars['tag'].to_list() == ['metric'] * N_RUNS + ['y=2x+C'] * (N_RUNS * N_EVENTS)
+    assert reader.scalars['value'].to_list()[:N_RUNS] == [float(i) for i in range(N_RUNS)]
     check_others(reader)
     # pivot
     reader = SummaryReader(tmpinfo['log_dir'], pivot=True)
@@ -361,25 +347,21 @@ def test_log_dir(prepare, testdir):
     # all columns
     reader = SummaryReader(tmpinfo['log_dir'], extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    assert reader.hparams.columns.to_list() == [
-        'tag', 'value', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['tag', 'value', 'dir_name', 'file_name']
     assert len(reader.hparams) == 2 * N_RUNS
     for i in range(N_RUNS):
         s, e = 2*i, 2*(i+1)
         assert reader.hparams['tag'].to_list()[s:e] == ['name', 'run_id']
         assert reader.hparams['value'].to_list()[s:e] == ['test', float(i)]
         assert reader.hparams['dir_name'].to_list()[s].startswith(f"run{i}/")
-        assert reader.hparams['dir_name'].to_list()[s] == \
-            reader.hparams['dir_name'].to_list()[s+1]
-        assert reader.hparams['file_name'].to_list()[s] == \
-            reader.hparams['file_name'].to_list()[s+1]
+        assert reader.hparams['dir_name'].to_list()[s] == reader.hparams['dir_name'].to_list()[s+1]
+        assert reader.hparams['file_name'].to_list()[s] == reader.hparams['file_name'].to_list()[s+1]
     check_others(reader)
     # pivot & all columns
     reader = SummaryReader(tmpinfo['log_dir'], pivot=True, extra_columns={
         'wall_time', 'dir_name', 'file_name'})
     print(reader.hparams)
-    assert reader.hparams.columns.to_list() == [
-        'name', 'run_id', 'dir_name', 'file_name']
+    assert reader.hparams.columns.to_list() == ['name', 'run_id', 'dir_name', 'file_name']
     assert reader.hparams['name'].to_list() == ['test'] * N_RUNS
     assert reader.hparams['run_id'].to_list() == [float(i) for i in range(N_RUNS)]
     assert len(reader.hparams['dir_name']) == N_RUNS

@@ -56,8 +56,7 @@ def test_tensorflow(prepare, testdir):
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
     for i in range(N_EVENTS):
         hist_dict = SummaryReader.buckets_to_histogram_dict(df_tf['dist'][i])
-        assert len(hist_dict['counts']) + 1 == \
-            len(hist_dict['limits'])
+        assert len(hist_dict['counts']) + 1 == len(hist_dict['limits'])
         assert sum(hist_dict['counts']) == N_PARTICLES
     df_th.drop(columns=['dist/limits', 'dist/counts'], inplace=True)
     df_tf.drop(columns=['dist'], inplace=True)
@@ -156,8 +155,7 @@ def test_event_file_raw(prepare, testdir):
     # - Test `raw_events` and `get_raw_events`
     assert reader.raw_events == reader.get_raw_events()
     assert reader.raw_events['histograms'] == reader.get_raw_events('histograms')
-    assert reader.raw_events['histograms']['dist'] == reader.get_raw_events(
-        'histograms', 'dist')
+    assert reader.raw_events['histograms']['dist'] == reader.get_raw_events('histograms', 'dist')
     # - Test raw event count & type
     events: List[HistogramEvent] = reader.get_raw_events('histograms', 'dist')
     assert len(events) == N_EVENTS
@@ -176,25 +174,21 @@ def test_log_dir(prepare, testdir):
     # Test default
     reader = SummaryReader(log_dir)
     df = reader.histograms
-    assert df.columns.to_list(
-    ) == ['step', 'tag', 'counts', 'limits']
+    assert df.columns.to_list() == ['step', 'tag', 'counts', 'limits']
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
     assert df['tag'].to_list() == ['dist'] * N_EVENTS
     for i in range(N_EVENTS):
-        assert len(df['counts'][i]) + 1 == \
-            len(df['limits'][i])
+        assert len(df['counts'][i]) + 1 == len(df['limits'][i])
         assert sum(df['counts'][i]) == N_PARTICLES
     check_others(reader)
     # Test pivot
     reader = SummaryReader(log_dir, pivot=True)
     assert len(reader.children) == 1
     df = reader.histograms
-    assert df.columns.to_list(
-    ) == ['step', 'dist/counts', 'dist/limits',]
+    assert df.columns.to_list() == ['step', 'dist/counts', 'dist/limits',]
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
     for i in range(N_EVENTS):
-        assert len(df['dist/counts'][i]) + 1 == \
-            len(df['dist/limits'][i])
+        assert len(df['dist/counts'][i]) + 1 == len(df['dist/limits'][i])
         assert sum(df['dist/counts'][i]) == N_PARTICLES
     check_others(reader)
     # Test all columns
@@ -202,14 +196,13 @@ def test_log_dir(prepare, testdir):
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'})
     df = reader.histograms
-    assert df.columns.to_list(
-        ) == ['step', 'tag', 'counts', 'limits', 'max', 'min', 'num', 'sum',
-        'sum_squares', 'wall_time', 'dir_name', 'file_name']
+    assert df.columns.to_list() == ['step', 'tag', 'counts', 'limits',
+                                    'max', 'min', 'num', 'sum', 'sum_squares',
+                                    'wall_time', 'dir_name', 'file_name']
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
     assert df['tag'].to_list() == ['dist'] * N_EVENTS
     for i in range(N_EVENTS):
-        assert len(df['counts'][i]) + 1 == \
-            len(df['limits'][i])
+        assert len(df['counts'][i]) + 1 == len(df['limits'][i])
         assert sum(df['counts'][i]) == N_PARTICLES
         assert np.isscalar(df['min'][i])
         assert np.isscalar(df['max'][i])
@@ -222,14 +215,12 @@ def test_log_dir(prepare, testdir):
                            'min', 'max', 'num', 'sum', 'sum_squares',
                            'wall_time', 'dir_name', 'file_name'})
     df = reader.histograms
-    assert df.columns.to_list(
-        ) == ['step', 'dist/counts', 'dist/limits', 'dist/max', 'dist/min',
-              'dist/num', 'dist/sum', 'dist/sum_squares', 'wall_time',
-              'dir_name', 'file_name']
+    assert df.columns.to_list() == ['step', 'dist/counts', 'dist/limits',
+                                    'dist/max', 'dist/min', 'dist/num', 'dist/sum', 'dist/sum_squares',
+                                    'wall_time', 'dir_name', 'file_name']
     assert df['step'].to_list() == [i for i in range(N_EVENTS)]
     for i in range(N_EVENTS):
-        assert len(df['dist/counts'][i]) + 1 == \
-            len(df['dist/limits'][i])
+        assert len(df['dist/counts'][i]) + 1 == len(df['dist/limits'][i])
         assert sum(df['dist/counts'][i]) == N_PARTICLES
         assert np.isscalar(df['dist/min'][i])
         assert np.isscalar(df['dist/max'][i])
