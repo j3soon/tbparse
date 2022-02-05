@@ -69,13 +69,24 @@ def test_tensorflow(prepare, testdir):
     df_tf = SummaryReader(log_dir_tf, pivot=True, extra_columns={'dir_name'}).tensors
     assert(df_th.equals(df_tf))
 
-def test_event_file_raw(prepare, testdir):
-    log_dir = os.path.join(testdir.tmpdir, 'run')
+def get_tmpdir_info(tmpdir):
+    log_dir = os.path.join(tmpdir, 'run')
     run_dir = os.path.join(log_dir, 'run0')
     dirs = os.listdir(run_dir)
     assert len(dirs) == 1
-    event_file = os.path.join(run_dir, dirs[0])
-    reader = SummaryReader(event_file, pivot=True)
+    event_filename = dirs[0]
+    event_file = os.path.join(run_dir, event_filename)
+    d = {
+        'log_dir': log_dir,
+        'run_dir': run_dir,
+        'event_file': event_file,
+        'event_filename': event_filename,
+    }
+    return d
+
+def test_event_file_raw(prepare, testdir):
+    tmpinfo = get_tmpdir_info(testdir.tmpdir)
+    reader = SummaryReader(tmpinfo["event_file"], pivot=True)
     # Test raw functions
     # - Test `raw_tags` and `get_raw_tags`
     assert reader.raw_tags == reader.get_raw_tags()
@@ -99,21 +110,16 @@ def check_others(reader):
     assert len(reader.hparams) == 0
 
 def test_event_file(prepare, testdir):
-    log_dir = os.path.join(testdir.tmpdir, 'run')
-    run_dir = os.path.join(log_dir, 'run0')
-    dirs = os.listdir(run_dir)
-    assert len(dirs) == 1
-    event_filename = dirs[0]
-    event_file = os.path.join(run_dir, event_filename)
+    tmpinfo = get_tmpdir_info(testdir.tmpdir)
     # Test pivot
-    reader = SummaryReader(event_file, pivot=True)
+    reader = SummaryReader(tmpinfo["event_file"], pivot=True)
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C']
     assert reader.tensors['step'].to_list() == [i for i in range(N_EVENTS)]
     assert reader.tensors['y=2x+C'].to_list() == [i * 2 for i in range(N_EVENTS)]
     assert reader.tensors['y=3x+C'].to_list() == [i * 3 for i in range(N_EVENTS)]
     check_others(reader)
     # Test additional tag column
-    reader = SummaryReader(event_file)
+    reader = SummaryReader(tmpinfo["event_file"])
     assert reader.tensors.columns.to_list() == ['step', 'tag', 'value']
     assert reader.tensors['step'].to_list()[:N_EVENTS] == [i for i in range(N_EVENTS)]
     assert reader.tensors['step'].to_list()[N_EVENTS:] == [i for i in range(N_EVENTS)]
@@ -123,22 +129,22 @@ def test_event_file(prepare, testdir):
     assert reader.tensors['value'].to_list()[N_EVENTS:] == [i * 3 for i in range(N_EVENTS)]
     check_others(reader)
     # Test pivot & additional wall_time column
-    reader = SummaryReader(event_file, pivot=True, extra_columns={'wall_time'})
+    reader = SummaryReader(tmpinfo["event_file"], pivot=True, extra_columns={'wall_time'})
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'wall_time']
     assert len(reader.tensors['wall_time']) == N_EVENTS
     check_others(reader)
     # Test pivot & additional dir_name column
-    reader = SummaryReader(event_file, pivot=True, extra_columns={'dir_name'})
+    reader = SummaryReader(tmpinfo["event_file"], pivot=True, extra_columns={'dir_name'})
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'dir_name']
     assert reader.tensors['dir_name'].to_list() == [''] * N_EVENTS
     check_others(reader)
     # Test pivot & additional file_name column
-    reader = SummaryReader(event_file, pivot=True, extra_columns={'file_name'})
+    reader = SummaryReader(tmpinfo["event_file"], pivot=True, extra_columns={'file_name'})
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'file_name']
-    assert reader.tensors['file_name'].to_list() == [event_filename] * N_EVENTS
+    assert reader.tensors['file_name'].to_list() == [tmpinfo["event_filename"]] * N_EVENTS
     check_others(reader)
     # Test all columns
-    reader = SummaryReader(event_file, extra_columns={
+    reader = SummaryReader(tmpinfo["event_file"], extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list() == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
     assert reader.tensors['step'].to_list()[:N_EVENTS] == [i for i in range(N_EVENTS)]
@@ -149,17 +155,13 @@ def test_event_file(prepare, testdir):
     assert reader.tensors['value'].to_list()[N_EVENTS:] == [i * 3 for i in range(N_EVENTS)]
     assert len(reader.tensors['wall_time']) == N_EVENTS * 2
     assert reader.tensors['dir_name'].to_list() == [''] * (N_EVENTS * 2)
-    assert reader.tensors['file_name'].to_list() == [event_filename] * (N_EVENTS * 2)
+    assert reader.tensors['file_name'].to_list() == [tmpinfo["event_filename"]] * (N_EVENTS * 2)
     check_others(reader)
 
 def test_run_dir(prepare, testdir):
-    log_dir = os.path.join(testdir.tmpdir, 'run')
-    run_dir = os.path.join(log_dir, 'run0')
-    dirs = os.listdir(run_dir)
-    assert len(dirs) == 1
-    event_filename = dirs[0]
+    tmpinfo = get_tmpdir_info(testdir.tmpdir)
     # Test pivot
-    reader = SummaryReader(run_dir, pivot=True, extra_columns={
+    reader = SummaryReader(tmpinfo["run_dir"], pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert len(reader.children) == 1
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'wall_time', 'dir_name', 'file_name']
@@ -169,10 +171,10 @@ def test_run_dir(prepare, testdir):
     assert len(reader.tensors['wall_time']) == N_EVENTS
     assert len(reader.tensors['wall_time'][0]) == 2
     assert reader.tensors['dir_name'].to_list() == [''] * N_EVENTS
-    assert reader.tensors['file_name'].to_list() == [event_filename] * N_EVENTS
+    assert reader.tensors['file_name'].to_list() == [tmpinfo["event_filename"]] * N_EVENTS
     check_others(reader)
     # Test all columns
-    reader = SummaryReader(run_dir, extra_columns={
+    reader = SummaryReader(tmpinfo["run_dir"], extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list() == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
     assert reader.tensors['step'].to_list()[:N_EVENTS] == [i for i in range(N_EVENTS)]
@@ -183,18 +185,18 @@ def test_run_dir(prepare, testdir):
     assert reader.tensors['value'].to_list()[N_EVENTS:] == [i * 3 for i in range(N_EVENTS)]
     assert len(reader.tensors['wall_time']) == N_EVENTS * 2
     assert reader.tensors['dir_name'].to_list() == [''] * (N_EVENTS * 2)
-    assert reader.tensors['file_name'].to_list() == [event_filename] * (N_EVENTS * 2)
+    assert reader.tensors['file_name'].to_list() == [tmpinfo["event_filename"]] * (N_EVENTS * 2)
     check_others(reader)
 
 def test_log_dir(prepare, testdir):
-    log_dir = os.path.join(testdir.tmpdir, 'run')
+    tmpinfo = get_tmpdir_info(testdir.tmpdir)
     # Test pivot
-    reader = SummaryReader(log_dir, pivot=True, extra_columns={
+    reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
                            'dir_name', 'file_name'})
     assert len(reader.children) == N_RUNS
     assert reader.tensors.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'dir_name', 'file_name']
     for i in range(N_RUNS):
-        run_dir = os.path.join(log_dir, f'run{i}')
+        run_dir = os.path.join(tmpinfo["log_dir"], f'run{i}')
         dirs = os.listdir(run_dir)
         assert len(dirs) == 1
         event_filename = dirs[0]
@@ -206,11 +208,11 @@ def test_log_dir(prepare, testdir):
         assert reader.tensors['file_name'][s:e].to_list() == [event_filename] * N_EVENTS
     check_others(reader)
     # Test all columns
-    reader = SummaryReader(log_dir, extra_columns={
+    reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
     assert reader.tensors.columns.to_list() == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
     for i in range(N_RUNS):
-        run_dir = os.path.join(log_dir, f'run{i}')
+        run_dir = os.path.join(tmpinfo["log_dir"], f'run{i}')
         dirs = os.listdir(run_dir)
         assert len(dirs) == 1
         event_filename = dirs[0]

@@ -89,6 +89,7 @@ def test_tensorboardX(prepare, testdir):
     # Compare
     # assert hparams_tbx == hparams_th
     # TODO: parsed hparams
+    # TODO: Rename to test_hparams_scalars
 
 def test_tensorflow(prepare, testdir):
     # Prepare Log
