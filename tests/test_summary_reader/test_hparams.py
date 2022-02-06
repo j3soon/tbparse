@@ -49,47 +49,22 @@ def test_tensorboardX(prepare, testdir):
         for j in range(N_EVENTS):
             writer.add_scalar('y=2x+C', j * 2 + i, j)
         writer.close()
-
+    # (default) Parse & Compare
+    df_th = SummaryReader(log_dir_th).scalars
+    df_tbx = SummaryReader(log_dir_tbx).scalars
+    df_th.replace("y=2x+C", "y_2x_C", inplace=True)
+    assert df_th.equals(df_tbx)
+    df_th = SummaryReader(log_dir_th).hparams
+    df_tbx = SummaryReader(log_dir_tbx).hparams
+    assert df_th.equals(df_tbx)
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).scalars
     df_tbx = SummaryReader(log_dir_tbx, pivot=True).scalars
-    assert df_th['step'].to_list() == df_tbx['step'].to_list()
-    assert df_th['metric'].to_list() == df_tbx['metric'].to_list()
-    assert df_th['y=2x+C'].to_list() == df_tbx['y_2x_C'].to_list()
-
-    # TODO
-    # Load hparams for tensorboardX
-    run_dir = os.path.join(log_dir_tbx, 'run0')
-    dirs = os.listdir(run_dir)
-    assert len(dirs) == 2
-    for d in dirs:
-        path = os.path.join(run_dir, d)
-        if os.path.isfile(path):
-            event_file = path
-        else:
-            hp_dir = path
-    dirs = os.listdir(hp_dir)
-    assert len(dirs) == 1
-    hp_file = os.path.join(hp_dir, dirs[0])
-    hparams_tbx = SummaryReader(hp_file).get_raw_events('hparams')
-    # Load hparams for torch
-    run_dir = os.path.join(log_dir_th, 'run0')
-    dirs = os.listdir(run_dir)
-    assert len(dirs) == 2
-    for d in dirs:
-        path = os.path.join(run_dir, d)
-        if os.path.isfile(path):
-            event_file = path
-        else:
-            hp_dir = path
-    dirs = os.listdir(hp_dir)
-    assert len(dirs) == 1
-    hp_file = os.path.join(hp_dir, dirs[0])
-    hparams_th = SummaryReader(hp_file).get_raw_events('hparams')
-    # Compare
-    # assert hparams_tbx == hparams_th
-    # TODO: parsed hparams
-    # TODO: Rename to test_hparams_scalars
+    df_th.rename(columns={"y=2x+C": "y_2x_C"}, inplace=True)
+    assert df_th.equals(df_tbx)
+    df_th = SummaryReader(log_dir_th, pivot=True).hparams
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).hparams
+    assert df_th.equals(df_tbx)
 
 def test_tensorflow(prepare, testdir):
     # Prepare Log
@@ -100,22 +75,26 @@ def test_tensorflow(prepare, testdir):
         writer = tf.summary.create_file_writer(os.path.join(log_dir_tf, f'run{i}'))
         writer.set_as_default()
         hp.hparams({'name': 'test', 'run_id': i})
-        tf.summary.scalar('metric', i, step=1)
+        tf.summary.scalar('metric', i, step=0)
         for j in range(N_EVENTS):
             tf.summary.scalar('y=2x+C', j * 2 + i, j)
         writer.close()
-    # TODO
-    # Load hparams for tensorflow
-    run_dir = os.path.join(log_dir_tf, 'run0')
-    dirs = os.listdir(run_dir)
-    assert len(dirs) == 1
-    hp_file = os.path.join(run_dir, dirs[0])
-    hparams_tf = SummaryReader(hp_file).get_raw_events('hparams')
-    events = hparams_tf
-    assert len(events) == 1
-    ssi = HParamsPluginData.FromString(events['_hparams_/session_start_info'])
-    print(ssi)
-    # TODO: parsed hparams (consider ssi only)
+    # (default) Parse & Compare
+    df_th = SummaryReader(log_dir_th).scalars
+    df_tf = SummaryReader(log_dir_tf).tensors
+    assert df_th.equals(df_tf)
+    df_th = SummaryReader(log_dir_th).hparams
+    df_tf = SummaryReader(log_dir_tf).hparams
+    assert df_th.equals(df_tf)
+    # (pivot) Parse & Compare
+    df_th = SummaryReader(log_dir_th, pivot=True).scalars
+    df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
+    print(df_th)
+    print(df_tf)
+    assert df_th.equals(df_tf)
+    df_th = SummaryReader(log_dir_th, pivot=True).hparams
+    df_tf = SummaryReader(log_dir_tf, pivot=True).hparams
+    assert df_th.equals(df_tf)
 
 def get_tmpdir_info(tmpdir):
     log_dir = os.path.join(tmpdir, 'run')

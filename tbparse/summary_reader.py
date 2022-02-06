@@ -22,11 +22,11 @@ from tensorboard.backend.event_processing.event_accumulator import (
 #     STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
 
 HPARAMS = 'hparams'
-HPARAMS_RAW_TAGS = [
-    "_hparams_/experiment",
-    "_hparams_/session_start_info",
-    "_hparams_/session_end_info"
-]
+HPARAMS_RAW_TAGS = {
+    "exp": "_hparams_/experiment",
+    "ssi": "_hparams_/session_start_info",
+    "sei": "_hparams_/session_end_info"
+}
 
 MINIMUM_SIZE_GUIDANCE = {
     COMPRESSED_HISTOGRAMS: 1,
@@ -500,7 +500,7 @@ class SummaryReader():
             Tuple[List[str], Dict[str, Any]]:
         """Helper function for parsing tags and values of hparams."""
         # hparam info is in ssi tag
-        ssi_tag = "_hparams_/session_start_info"
+        ssi_tag = HPARAMS_RAW_TAGS['ssi']
         if ssi_tag not in self.get_raw_tags(HPARAMS, event_acc):
             return [], {}
         data = self.get_raw_events(HPARAMS, ssi_tag, event_acc)
@@ -547,6 +547,11 @@ class SummaryReader():
             all_events = cast(
                 Dict[str, List[Any]],
                 self.get_raw_events(event_type, None, event_acc))
+        if event_type == TENSORS:
+            # Ignore hparam tags (by TensorFlow): _hparams_/session_start_info
+            self._tags[event_type] = \
+                list(filter(lambda x: x != HPARAMS_RAW_TAGS['ssi'],
+                            self._tags[event_type]))
         # Add columns that depend on event types
         get_row = {
             SCALARS: self._get_scalar_row,

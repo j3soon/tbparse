@@ -55,19 +55,19 @@ def test_tensorflow(prepare, testdir):
     # (default) Parse & Compare
     df_th = SummaryReader(log_dir_th).tensors
     df_tf = SummaryReader(log_dir_tf).tensors
-    assert(df_th.equals(df_tf))
+    assert df_th.equals(df_tf)
     # (dir_name) Parse & Compare
     df_th = SummaryReader(log_dir_th, extra_columns={'dir_name'}).tensors
     df_tf = SummaryReader(log_dir_tf, extra_columns={'dir_name'}).tensors
-    assert(df_th.equals(df_tf))
+    assert df_th.equals(df_tf)
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
-    assert(df_th.equals(df_tf))
+    assert df_th.equals(df_tf)
     # (pivot & dir_name) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True, extra_columns={'dir_name'}).tensors
     df_tf = SummaryReader(log_dir_tf, pivot=True, extra_columns={'dir_name'}).tensors
-    assert(df_th.equals(df_tf))
+    assert df_th.equals(df_tf)
 
 def get_tmpdir_info(tmpdir):
     log_dir = os.path.join(tmpdir, 'run')
