@@ -22,6 +22,8 @@ def prepare(testdir):
         # non event file
         with open(os.path.join(run_dir, 'temp.txt'), 'w') as file:
             file.write('temp')
+        # empty directory
+        os.mkdir(os.path.join(run_dir, 'tmpdir'))
         writer.close()
     temp_dir = os.path.join(testdir.tmpdir, 'temp')
     os.mkdir(temp_dir)
@@ -46,31 +48,26 @@ def test_event_file(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     run_dir = os.path.join(log_dir, 'run0')
     dirs = sorted(os.listdir(run_dir))
-    assert len(dirs) == 2
+    assert len(dirs) == 3
     event_filename = dirs[0]
     # Test pivot
     reader = SummaryReader(run_dir, pivot=True, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
-    assert len(reader.children) == 2
-    assert reader.scalars.columns.to_list(
-    ) == ['step', 'y=2x+C', 'y=3x+C', 'wall_time', 'dir_name', 'file_name']
+    assert len(reader.children) == 3
+    assert reader.scalars.columns.to_list() == ['step', 'y=2x+C', 'y=3x+C', 'wall_time', 'dir_name', 'file_name']
     assert reader.scalars['step'].to_list() == [i for i in range(N_EVENTS)]
-    assert reader.scalars['y=2x+C'].to_list() == [i *
-                                                  2 for i in range(N_EVENTS)]
-    assert reader.scalars['y=3x+C'].to_list() == [i *
-                                                  3 for i in range(N_EVENTS)]
+    assert reader.scalars['y=2x+C'].to_list() == [i * 2 for i in range(N_EVENTS)]
+    assert reader.scalars['y=3x+C'].to_list() == [i * 3 for i in range(N_EVENTS)]
     assert len(reader.scalars['wall_time']) == N_EVENTS
     assert len(reader.scalars['wall_time'][0]) == 2
-    assert reader.scalars['dir_name'].to_list() == [
-        '' for _ in range(N_EVENTS)]
-    assert reader.scalars['file_name'].to_list(
-    ) == [event_filename for _ in range(N_EVENTS)]
+    assert reader.scalars['dir_name'].to_list() == [''] * N_EVENTS
+    assert reader.scalars['file_name'].to_list() == [event_filename] * N_EVENTS
 
 def test_event_types(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     run_dir = os.path.join(log_dir, 'run0')
     dirs = sorted(os.listdir(run_dir))
-    assert len(dirs) == 2
+    assert len(dirs) == 3
     event_filename = dirs[0]
     event_file = os.path.join(run_dir, event_filename)
     # Test default
@@ -81,7 +78,7 @@ def test_get_tags(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     run_dir = os.path.join(log_dir, 'run0')
     dirs = sorted(os.listdir(run_dir))
-    assert len(dirs) == 2
+    assert len(dirs) == 3
     event_filename = dirs[0]
     event_file = os.path.join(run_dir, event_filename)
     # Test default
@@ -91,3 +88,7 @@ def test_get_tags(prepare, testdir):
     reader = SummaryReader(run_dir)
     assert reader.tags['scalars'] == ['y=2x+C', 'y=3x+C']
     assert reader.get_tags('scalars') == ['y=2x+C', 'y=3x+C']
+
+# TODO: tags duplicate with file_name, dir_name, etc.
+# TODO: log single letter?
+# TODO: order difference when pd.concat
