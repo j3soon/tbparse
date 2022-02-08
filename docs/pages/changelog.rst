@@ -2,6 +2,17 @@
 Change Log
 ===================================
 
+v0.0.4
+===================================
+
+Features:
+
+* Support parsing ``hparams``
+
+Fixes:
+
+* Fix empty directory bug
+
 v0.0.3
 ===================================
 

@@ -7,7 +7,7 @@ github_url = "https://github.com/j3soon/tbparse"
 
 setuptools.setup(
     name="tbparse",
-    version="0.0.3",
+    version="0.0.4",
     author="Johnson",
     author_email="j3.soon@msa.hinet.net",
     description="Read, parse, and plot tensorboard event logs with ease!",
