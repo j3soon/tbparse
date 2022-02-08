@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorboard.plugins.hparams.plugin_data_pb2 import HParamsPluginData
 from tensorboard.backend.event_processing.event_accumulator import (
     AUDIO, COMPRESSED_HISTOGRAMS, HISTOGRAMS, IMAGES, SCALARS,
     STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, EventAccumulator, HistogramEvent,
@@ -20,7 +21,12 @@ from tensorboard.backend.event_processing.event_accumulator import (
 #     COMPRESSED_HISTOGRAMS, TENSORS, GRAPH, META_GRAPH, RUN_METADATA, \
 #     STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
 
-# HPARAMS = 'hparams'
+HPARAMS = 'hparams'
+HPARAMS_RAW_TAGS = {
+    "exp": "_hparams_/experiment",
+    "ssi": "_hparams_/session_start_info",
+    "sei": "_hparams_/session_end_info"
+}
 
 MINIMUM_SIZE_GUIDANCE = {
     COMPRESSED_HISTOGRAMS: 1,
@@ -31,7 +37,7 @@ MINIMUM_SIZE_GUIDANCE = {
     TENSORS: 1,
 }
 
-ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS}
+ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, HPARAMS}
 ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max',
                      'num', 'sum', 'sum_squares'}
 
@@ -152,13 +158,14 @@ class SummaryReader():
 
         :param event_type: the event type to retrieve, None means return all, \
         defaults to None.
-        :type event_type: {None, 'histograms', 'scalars', 'tensors'}, optional
+        :type event_type: {None, 'histograms', 'scalars', 'tensors', \
+            'hparams'}, optional
         :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
             `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: List[str] | Dict[str, List[str]]
         """
-        if event_type not in {None, 'histograms', 'scalars', 'tensors'}:
+        if event_type not in {None}.union(ALL_EVENT_TYPES):
             raise ValueError(f"Unknown event_type: {event_type}")
         if self._tags is not None:
             # Leaf node returns directly
@@ -188,22 +195,26 @@ class SummaryReader():
         # `np.ndarray` as an element in cell. See the following:
         # lib/python3.6/site-packages/pandas/core/groupby/generic.py:482
         # Python 3.6 EOL: 2021-12-23 (https://www.python.org/downloads/)
-        assert isinstance(s, pd.Series)
-        x: List[Any] = list(s)
-        lst = []
-        for xx in x:
-            if isinstance(xx, list):
-                lst.extend(xx)
-            elif np.isscalar(xx):
-                if not np.isnan(xx):
+        try:
+            assert isinstance(s, pd.Series)
+            x = list(s)
+            lst = []
+            for xx in x:
+                if isinstance(xx, list):
+                    lst.extend(xx)
+                elif np.isscalar(xx):
+                    if not pd.isnull(xx):
+                        lst.append(xx)
+                else:
                     lst.append(xx)
-            else:
-                lst.append(xx)
-        if len(lst) == 0:
-            return np.nan
-        if len(lst) == 1:
-            return lst[0]
-        return lst
+            if len(lst) == 0:
+                return np.nan
+            if len(lst) == 1:
+                return lst[0]
+            return lst
+        except Exception as error:
+            # Pandas ignores some errors by default
+            raise ValueError from error
 
     def get_events(self, event_type: str) -> pd.DataFrame:
         """Construct a `pandas.DataFrame` that stores all `event_type` events \
@@ -211,19 +222,15 @@ class SummaryReader():
         property. Therefore you may want to store the results and reuse it \
         for better performance.
 
-        :type event_type: {None, 'histograms', 'scalars', 'tensors'}.
+        :type event_type: {'histograms', 'scalars', 'tensors', 'hparams'}.
         :raises ValueError: if `event_type` is unknown.
         :return: A `DataFrame` storing all `event_type` events.
         :rtype: pandas.DataFrame
         """
         if event_type not in ALL_EVENT_TYPES:
             raise ValueError(f"Unknown event_type: {event_type}")
-        group_columns = []
-        for c in ['dir_name', 'file_name']:
-            if c in self._extra_columns:
-                group_columns.append(c)
-        group_columns.append('step')
-
+        group_columns: List[Any] = list(filter(
+            lambda x: x in self._extra_columns, ['dir_name', 'file_name']))
         dfs = []
         if os.path.isfile(self.log_path):
             # Leaf node appends events directly
@@ -233,8 +240,7 @@ class SummaryReader():
             for child in self._children.values():
                 df = child.get_events(event_type)
                 # iteratively prepend dir_name
-                if 'dir_name' in self._extra_columns and \
-                        os.path.isdir(child.log_path):
+                if 'dir_name' in df and os.path.isdir(child.log_path):
                     dir_name = os.path.basename(child.log_path)
                     df_cond = (df['dir_name'] == '')
                     df.loc[df_cond, 'dir_name'] = dir_name
@@ -248,25 +254,33 @@ class SummaryReader():
         if df_stacked.empty:
             return pd.DataFrame()
         if not self._pivot:
-            group_columns = group_columns[:-1]
-            group_columns.extend(['tag', 'step'])
-            df_stacked.sort_values(group_columns, ignore_index=True,
-                                   inplace=True)
-            return df_stacked  # keep original order since no merging occurs
+            group_columns += ['tag']
 
+        group_columns += ['step']
+        # Don't sort by wall_time, since there is only a single value per step
+        # in most cases
+        group_columns = list(filter(
+            lambda x: x in df_stacked.columns, group_columns))
         df_stacked.sort_values(group_columns, ignore_index=True, inplace=True)
+        if not self._pivot:
+            return df_stacked
+        if len(group_columns) == 0:
+            # merge all rows
+            group_columns = [True] * len(df_stacked)
         # Merge if there are multiple values per step with the same tag
         grouped = df_stacked.groupby(group_columns, sort=False)
-        df = grouped.agg(self._merge_values)
+        df = grouped.aggregate(self._merge_values)
         df.reset_index(inplace=True)
         # Reorder columns
-        columns = [x for x in df.columns if x not in
-                   ['step', 'wall_time', 'dir_name', 'file_name']]
-        columns = ['step'] + columns
-        for c in ['wall_time', 'dir_name', 'file_name']:
-            if c in self._extra_columns:
-                columns.append(c)
-        return df[columns]  # reorder
+        middle_columns = list(filter(
+            lambda x: x not in
+            ['step', 'wall_time', 'dir_name', 'file_name'],
+            df_stacked.columns))
+        middle_columns = sorted(middle_columns)  # sort tags
+        columns = ['step'] + middle_columns + \
+            ['wall_time', 'dir_name', 'file_name']
+        columns = list(filter(lambda x: x in df_stacked.columns, columns))
+        return df[columns]  # reorder since values are merged
 
     @property
     def scalars(self) -> pd.DataFrame:
@@ -303,6 +317,18 @@ class SummaryReader():
         :rtype: pandas.DataFrame
         """
         return self.get_events(HISTOGRAMS)
+
+    @property
+    def hparams(self) -> pd.DataFrame:
+        """Construct a `pandas.DataFrame` that stores all hparams events
+        under `log_path`. Some processing is performed when evaluating this \
+        property. Therefore you may want to store the results and reuse it \
+        for better performance.
+
+        :return: A `DataFrame` storing all hparams events.
+        :rtype: pandas.DataFrame
+        """
+        return self.get_events(HPARAMS)
 
     @staticmethod
     def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
@@ -410,40 +436,46 @@ class SummaryReader():
             i += 1
         return np.array(y) / n
 
-    def _add_columns_scalar(self, d: Dict[str, Any], tag: str, e: ScalarEvent):
+    def _get_scalar_row(self, tag: str, e: ScalarEvent) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the ScalarEvent `e`"""
+        d = {'step': e.step}
         if self._pivot:
             d[tag] = e.value
         else:
             d['tag'] = tag
             d['value'] = e.value
+        return self._add_extra_columns(d, e.wall_time)
 
-    def _add_columns_tensor(self, d: Dict[str, Any], tag: str, e: TensorEvent):
+    def _get_tensor_row(self, tag: str, e: TensorEvent) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the TensorEvent `e`"""
         value = tf.make_ndarray(e.tensor_proto)
         if value.shape == ():
             value = value.item()
+        d = {'step': e.step}
         if self._pivot:
             d[tag] = value
         else:
             d['tag'] = tag
             d['value'] = value
+        return self._add_extra_columns(d, e.wall_time)
 
-    def _add_columns_histograms(self, d: Dict[str, Any], tag: str,
-                                e: HistogramEvent):
+    def _get_histogram_row(self, tag: str, e: HistogramEvent) -> \
+            Dict[str, Any]:
         """Add entries in dictionary `d` based on the HistogramEvent `e`"""
         hv = e.histogram_value
         limits = np.array([hv.min] + hv.bucket_limit, dtype=np.float64)
         counts = np.array(hv.bucket, dtype=np.float64)
         columns = {
-            'limits': limits,
             'counts': counts,
-            'min': hv.min,
+            'limits': limits,
             'max': hv.max,
+            'min': hv.min,
             'num': hv.num,
             'sum': hv.sum,
             'sum_squares': hv.sum_squares,
         }
+        # assert list(columns.keys()) == list(sorted(columns.keys()))
+        d = {'step': e.step}
         if not self._pivot:
             d['tag'] = tag
         lst = list(self._extra_columns) + ['limits', 'counts']
@@ -451,6 +483,48 @@ class SummaryReader():
             if k in lst:
                 key = k if not self._pivot else tag + '/' + k
                 d[key] = v
+        return self._add_extra_columns(d, e.wall_time)
+
+    def _get_hparam_row(self, tag: str, value: Any) -> Dict[str, Any]:
+        """Add entries in dictionary `d` based on the HParamsPluginData \
+           `plugin_data`"""
+        d = {}
+        if self._pivot:
+            d[tag] = value
+        else:
+            d['tag'] = tag
+            d['value'] = value
+        return self._add_extra_columns(d, None)
+
+    def _parse_hparams(self, event_acc: EventAccumulator) -> \
+            Tuple[List[str], Dict[str, Any]]:
+        """Helper function for parsing tags and values of hparams."""
+        # hparam info is in ssi tag
+        ssi_tag = HPARAMS_RAW_TAGS['ssi']
+        if ssi_tag not in self.get_raw_tags(HPARAMS, event_acc):
+            return [], {}
+        data = self.get_raw_events(HPARAMS, ssi_tag, event_acc)
+        plugin_data: HParamsPluginData = HParamsPluginData.FromString(data)
+        ssi = plugin_data.session_start_info
+        tags = list(ssi.hparams.keys())
+        values = {}
+        for tag in tags:
+            fields = ssi.hparams[tag].ListFields()
+            assert len(fields) == 1
+            assert len(fields[0]) == 2
+            values[tag] = [fields[0][1]]
+        return tags, values
+
+    def _add_extra_columns(self, d: Dict[str, Any],
+                           wall_time: Optional[float]) -> Dict[str, Any]:
+        """Add entries in dictionary `d` based on the extra columns."""
+        if 'wall_time' in self._extra_columns and wall_time is not None:
+            d['wall_time'] = wall_time
+        if 'dir_name' in self._extra_columns:
+            d['dir_name'] = ''
+        if 'file_name' in self._extra_columns:
+            d['file_name'] = os.path.basename(self.log_path)
+        return d
 
     def _parse_events(self, event_type: str, event_acc: EventAccumulator):
         """Parse and store `event_type` events inside a event file.
@@ -463,34 +537,33 @@ class SummaryReader():
             raise ValueError(f"Not an event file: {self.log_path}")
         rows = []
         assert self._tags is not None
-        self._tags[event_type] = event_acc.Tags()[event_type]
-        # Add columns that depend on event types
-        if event_type == SCALARS:
-            add_columns = self._add_columns_scalar
-            getter = event_acc.Scalars
-        elif event_type == TENSORS:
-            add_columns = self._add_columns_tensor
-            getter = event_acc.Tensors
-        elif event_type == HISTOGRAMS:
-            add_columns = self._add_columns_histograms
-            getter = event_acc.Histograms
+        if event_type == HPARAMS:
+            self._tags[event_type], all_events = self._parse_hparams(event_acc)
         else:
-            raise ValueError(f"Unknown event_type: {event_type}")
-        # Add shared columns
+            # parsed tags same as raw tags
+            self._tags[event_type] = cast(
+                List[str],
+                self.get_raw_tags(event_type, event_acc))
+            all_events = cast(
+                Dict[str, List[Any]],
+                self.get_raw_events(event_type, None, event_acc))
+        if event_type == TENSORS:
+            # Ignore hparam tags (by TensorFlow): _hparams_/session_start_info
+            self._tags[event_type] = \
+                list(filter(lambda x: x != HPARAMS_RAW_TAGS['ssi'],
+                            self._tags[event_type]))
+        # Add columns that depend on event types
+        get_row = {
+            SCALARS: self._get_scalar_row,
+            TENSORS: self._get_tensor_row,
+            HISTOGRAMS: self._get_histogram_row,
+            HPARAMS: self._get_hparam_row,
+        }[event_type]
         for tag in self._tags[event_type]:
-            events = getter(tag)
+            events = all_events[tag]
             for e in events:
-                d = {'step': e.step}
-                add_columns(d, tag, e)
-                if 'wall_time' in self._extra_columns:
-                    d['wall_time'] = e.wall_time
-                if 'dir_name' in self._extra_columns:
-                    d['dir_name'] = ''
-                if 'file_name' in self._extra_columns:
-                    d['file_name'] = os.path.basename(self.log_path)
-                rows.append(d)
-        df = pd.DataFrame(rows)
-        self._events[event_type] = df
+                rows.append(get_row(tag, e))
+        self._events[event_type] = pd.DataFrame(rows)
 
     @property
     def children(self) -> Dict[str, 'SummaryReader']:
@@ -514,7 +587,8 @@ class SummaryReader():
         """
         return cast(Dict[str, List[str]], self.get_raw_tags())
 
-    def get_raw_tags(self, event_type: str = None) -> \
+    def get_raw_tags(self, event_type: str = None,
+                     event_acc: EventAccumulator = None) -> \
             Union[List[str], Dict[str, List[str]]]:
         """Returns a list of raw tags for the specified raw event type. If
         `event_type` is None, return a dictionary containing a list of raw
@@ -524,7 +598,7 @@ class SummaryReader():
         :param event_type: the event type to retrieve, None means return all, \
             defaults to None.
         :type event_type: {None, 'images', 'audio', 'histograms', 'scalars', \
-            'tensors', 'graph', 'meta_graph', 'run_metadata' \
+            'tensors', 'graph', 'meta_graph', 'run_metadata', 'hparams' \
             }, optional
         :raises ValueError: if `log_path` is a directory.
         :raises ValueError: if `event_type` is unknown.
@@ -534,16 +608,23 @@ class SummaryReader():
         """
         if event_type not in {None, 'images', 'audio', 'histograms', 'scalars',
                               'tensors', 'graph', 'meta_graph',
-                              'run_metadata'}:
+                              'run_metadata', 'hparams'}:
             raise ValueError(f"Unknown event_type: {event_type}")
         if os.path.isdir(self.log_path):
             raise ValueError(f"Not an event file: {self.log_path}")
-        event_acc = EventAccumulator(
-            self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
-        event_acc.Reload()
+        if event_acc is None:
+            event_acc = EventAccumulator(
+                self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
+            event_acc.Reload()
+        tags = event_acc.Tags()
+        tags[HPARAMS] = []
+        # pylint: disable=W0212
+        if HPARAMS in event_acc._plugin_to_tag_to_content:
+            content = event_acc.PluginTagToContent(HPARAMS)
+            tags[HPARAMS] = list(content.keys())
         if event_type is None:
-            return event_acc.Tags()
-        return event_acc.Tags()[event_type]
+            return tags
+        return tags[event_type]
 
     @property
     def raw_events(self) -> Dict[str, Dict[str, List[Any]]]:
@@ -556,9 +637,10 @@ class SummaryReader():
         """
         return cast(Dict[str, Dict[str, List[Any]]], self.get_raw_events())
 
-    def get_raw_events(self, event_type: str = None, tag: str = None) \
-            -> Union[List[Any], Dict[str, List[Any]],
-                     Dict[str, Dict[str, List[Any]]]]:
+    def get_raw_events(self, event_type: str = None, tag: str = None,
+                       event_acc: EventAccumulator = None) -> \
+            Union[List[Any], Dict[str, List[Any]],
+                  Dict[str, Dict[str, List[Any]]]]:
         """Returns a list of raw events for the specified raw event type. If
         `tag` is None, return a dictionary containing a list of raw events for
         each raw event type. If `event_type` is None, return a dictionary of
@@ -576,33 +658,32 @@ class SummaryReader():
         """
         if os.path.isdir(self.log_path):
             raise ValueError(f"Not an event file: {self.log_path}")
-        event_acc = EventAccumulator(
-            self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
-        event_acc.Reload()
+        if event_acc is None:
+            event_acc = EventAccumulator(
+                self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
+            event_acc.Reload()
         if event_type is None:
             # Return all event types by recursion
             if tag is not None:
                 raise ValueError("tag shouldn't be set if event_type is None")
             lst = self._make_empty_dict([])
             for t in lst:
-                # Collect children's events
-                events = self.get_raw_events(t)
+                # Collect events
+                events = self.get_raw_events(t, None, event_acc)
                 lst[t] = cast(Dict[str, List[Any]], events)
             return lst  # dict of dict containing list of events
         # Only collect the specified event type
-        if event_type == SCALARS:
-            getter = event_acc.Scalars
-        elif event_type == TENSORS:
-            getter = event_acc.Tensors
-        elif event_type == HISTOGRAMS:
-            getter = event_acc.Histograms
-        else:
-            raise KeyError(f"Unknown event_type: {event_type}")
+        get_events = {
+            SCALARS: event_acc.Scalars,
+            TENSORS: event_acc.Tensors,
+            HISTOGRAMS: event_acc.Histograms,
+            HPARAMS: (lambda tag: event_acc.PluginTagToContent(HPARAMS)[tag]),
+        }[event_type]
         if tag is not None:
-            return getter(tag)  # list of events
+            return get_events(tag)  # list of events
         ret = {}
-        for t in event_acc.Tags()[event_type]:
-            ret[t] = getter(t)
+        for t in self.get_raw_tags(event_type, event_acc):
+            ret[t] = get_events(t)
         return ret  # dict containing list of events
 
     @staticmethod
@@ -615,14 +696,14 @@ class SummaryReader():
         return {
             # IMAGES: [],
             # AUDIO: [],
-            HISTOGRAMS: copy.copy(data),
-            SCALARS: copy.copy(data),
+            HISTOGRAMS: copy.deepcopy(data),
+            SCALARS: copy.deepcopy(data),
             # COMPRESSED_HISTOGRAMS: [],
-            TENSORS: copy.copy(data),
+            TENSORS: copy.deepcopy(data),
             # GRAPH: [],
             # META_GRAPH: [],
             # RUN_METADATA: [],
-            # HPARAMS: [],
+            HPARAMS: [],
         }
 
     def __repr__(self) -> str:

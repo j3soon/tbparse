@@ -91,8 +91,7 @@ def test_log_dir(prepare, testdir):
     # Test pivot
     reader = SummaryReader(log_dir, pivot=True, extra_columns={'dir_name'})
     assert len(reader.children) == 4
-    assert reader.scalars.columns.to_list(
-    ) == ['step', 'run_14h', 'dir_name']
+    assert reader.scalars.columns.to_list() == ['step', 'run_14h', 'dir_name']
     df0 = reader.scalars
     assert df0.shape == (N_STEPS*3, 3)
     steps = [i for i in range(N_STEPS)]
@@ -100,22 +99,18 @@ def test_log_dir(prepare, testdir):
     df = df0.loc[df0['dir_name'] == 'run_14h_xsinx', ['step', 'run_14h']]
     assert df.shape == (100, 2)
     assert df['step'].to_list() == steps
-    assert_almost_equal(df['run_14h'].to_numpy(),
-                        [i*np.sin(i/R) for i in range(100)], 2)
+    assert_almost_equal(df['run_14h'].to_numpy(), [i*np.sin(i/R) for i in range(100)], 2)
     # xcosx
     df = df0.loc[df0['dir_name'] == 'run_14h_xcosx', ['step', 'run_14h']]
     assert df.shape == (100, 2)
     assert df['step'].to_list() == steps
-    assert_almost_equal(df['run_14h'].to_numpy(),
-                        [i*np.cos(i/R) for i in range(100)], 2)
+    assert_almost_equal(df['run_14h'].to_numpy(), [i*np.cos(i/R) for i in range(100)], 2)
     # tanx
     df = df0.loc[df0['dir_name'] == 'run_14h_tanx', ['step', 'run_14h']]
     assert df.shape == (100, 2)
     assert df['step'].to_list() == steps
-    assert_almost_equal(df['run_14h'].to_numpy(),
-                        [np.tan(i/R) for i in range(100)], 2)
+    assert_almost_equal(df['run_14h'].to_numpy(), [np.tan(i/R) for i in range(100)], 2)
     # Test all columns
     reader = SummaryReader(log_dir, extra_columns={
                            'wall_time', 'dir_name', 'file_name'})
-    assert reader.scalars.columns.to_list(
-    ) == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
+    assert reader.scalars.columns.to_list() == ['step', 'tag', 'value', 'wall_time', 'dir_name', 'file_name']
