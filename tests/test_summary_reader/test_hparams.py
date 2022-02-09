@@ -21,8 +21,6 @@ def prepare(testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     for i in range(N_RUNS):
         writer = SummaryWriter(os.path.join(log_dir, f'run{i}'))
-        # writer.add_hparams({'name': 'test', 'run id': i}, {}, run_name='.')
-        # TODO: will affect all the way up (won't affect downwards)
         writer.add_hparams({'name': 'test', 'run_id': i}, {'metric': i})
         for j in range(N_EVENTS):
             writer.add_scalar('y=2x+C', j * 2 + i, j)
@@ -89,8 +87,6 @@ def test_tensorflow(prepare, testdir):
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).scalars
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
-    print(df_th)
-    print(df_tf)
     assert df_th.equals(df_tf)
     df_th = SummaryReader(log_dir_th, pivot=True).hparams
     df_tf = SummaryReader(log_dir_tf, pivot=True).hparams
@@ -304,8 +300,6 @@ def test_run_dir(prepare, testdir):
     assert reader.hparams['file_name'].to_list() == [tmpinfo["hp_filename"]]
     check_others(reader)
 
-# TODO: scalars filtering based on hparam
-
 def test_log_dir(prepare, testdir):
     tmpinfo = get_tmpdir_info(testdir.tmpdir)
     # default
@@ -340,7 +334,6 @@ def test_log_dir(prepare, testdir):
     # pivot & all columns
     reader = SummaryReader(tmpinfo['log_dir'], pivot=True, extra_columns={
         'wall_time', 'dir_name', 'file_name'})
-    print(reader.hparams)
     assert reader.hparams.columns.to_list() == ['name', 'run_id', 'dir_name', 'file_name']
     assert reader.hparams['name'].to_list() == ['test'] * N_RUNS
     assert reader.hparams['run_id'].to_list() == [float(i) for i in range(N_RUNS)]

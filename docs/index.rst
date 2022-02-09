@@ -79,6 +79,7 @@ If you find this package useful, you can star or fork the repository on
    pages/parsing-scalars
    pages/parsing-tensors
    pages/parsing-histograms
+   pages/parsing-hparams
 
 .. toctree::
    :caption: Examples
