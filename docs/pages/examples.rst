@@ -8,6 +8,7 @@ Minimum Examples
 * :ref:`tbparse_parsing-scalars`
 * :ref:`tbparse_parsing-tensors`
 * :ref:`tbparse_parsing-histograms`
+* :ref:`tbparse_parsing-hparams`
 
 Real World Examples
 ===================================

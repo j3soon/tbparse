@@ -3,7 +3,7 @@ Parsing without tbparse
 ===================================
 
 To the best of our knowledge, there are no official documentation on parsing
-Tensorboard event files. However, it can be done with TensorFlow in two ways,
+Tensorboard event files. It can be done with Tensorboard in two ways,
 which require inspecting the TensorFlow source code.
 
 If you have some event logs that are difficult to parse with the current
@@ -14,7 +14,7 @@ Similar to other pages, we need to first generate a event file. We use PyTorch
 event writer to log ``scalars`` for simplicity. Since ``tensors`` and other
 type of events may require parsing
 `Protocol Buffers <https://developers.google.com/protocol-buffers>`_,
-which requires needs more parsing code.
+which needs more parsing code.
 
    >>> import os
    >>> import tempfile
@@ -90,7 +90,7 @@ Some other (unofficial) related tools on GitHub:
 * `mrahtz/tbplot <https://github.com/mrahtz/tbplot>`_
 
 If you know some related tools not listed here,
-you can open an `issue`_ or `pull request`_, and I'll add it to the list.
+you can open an `issue`_ or `pull request`_.
 
 .. _issue: https://github.com/j3soon/tbparse/issues
 .. _pull request: https://github.com/j3soon/tbparse/pulls
