@@ -23,6 +23,8 @@ def prepare(testdir):
                                         'xcosx':i*np.cos(i/R),
                                         'tanx': np.tan(i/R)}, i)
     writer.close()
+    # This call adds three values to the same scalar plot with the tag
+    # 'run_14h' in TensorBoard's scalar section.
     """
     run
     ├── events.out.tfevents.<id-1>
