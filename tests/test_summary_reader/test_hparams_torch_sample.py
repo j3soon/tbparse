@@ -4,6 +4,7 @@ import pytest
 from tbparse import SummaryReader
 from torch.utils.tensorboard import SummaryWriter
 
+
 @pytest.fixture
 def prepare(testdir):
     # Ref: https://pytorch.org/docs/stable/tensorboard.html
