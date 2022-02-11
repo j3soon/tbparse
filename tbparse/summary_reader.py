@@ -22,10 +22,13 @@ from tensorboard.backend.event_processing.event_accumulator import (
 #     STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
 
 HPARAMS = 'hparams'
-HPARAMS_RAW_TAGS = {
-    "exp": "_hparams_/experiment",
-    "ssi": "_hparams_/session_start_info",
-    "sei": "_hparams_/session_end_info"
+TEXT = 'text'
+PLUGIN_TAGS = {HPARAMS, TEXT}
+PLUGIN_RAW_TAGS = {
+    "hparams/exp": "_hparams_/experiment",
+    "hparams/ssi": "_hparams_/session_start_info",
+    "hparams/sei": "_hparams_/session_end_info",
+    TEXT: "/text_summary",
 }
 
 MINIMUM_SIZE_GUIDANCE = {
@@ -37,7 +40,7 @@ MINIMUM_SIZE_GUIDANCE = {
     TENSORS: 1,
 }
 
-ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, HPARAMS}
+ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, HPARAMS, TEXT}
 ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max',
                      'num', 'sum', 'sum_squares'}
 
@@ -330,6 +333,18 @@ class SummaryReader():
         """
         return self.get_events(HPARAMS)
 
+    @property
+    def texts(self) -> pd.DataFrame:
+        """Construct a `pandas.DataFrame` that stores all text events
+        under `log_path`. Some processing is performed when evaluating this \
+        property. Therefore you may want to store the results and reuse it \
+        for better performance.
+
+        :return: A `DataFrame` storing all hparams events.
+        :rtype: pandas.DataFrame
+        """
+        return self.get_events(TEXT)
+
     @staticmethod
     def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
         """Convert a list of buckets to histogram dictionary.
@@ -450,6 +465,7 @@ class SummaryReader():
         """Add entries in dictionary `d` based on the TensorEvent `e`"""
         value = tf.make_ndarray(e.tensor_proto)
         if value.shape == ():
+            # Tensorflow histogram may have more than one items
             value = value.item()
         d = {'step': e.step}
         if self._pivot:
@@ -496,11 +512,24 @@ class SummaryReader():
             d['value'] = value
         return self._add_extra_columns(d, None)
 
+    def _get_text_row(self, tag: str, e: TensorEvent) -> Dict[str, Any]:
+        """Add entries in dictionary `d` based on the TensorEvent `e`"""
+        value = tf.make_ndarray(e.tensor_proto).item()
+        assert isinstance(value, bytes)
+        value = value.decode('utf-8')
+        d = {'step': e.step}
+        if self._pivot:
+            d[tag] = value
+        else:
+            d['tag'] = tag
+            d['value'] = value
+        return self._add_extra_columns(d, e.wall_time)
+
     def _parse_hparams(self, event_acc: EventAccumulator) -> \
             Tuple[List[str], Dict[str, Any]]:
         """Helper function for parsing tags and values of hparams."""
         # hparam info is in ssi tag
-        ssi_tag = HPARAMS_RAW_TAGS['ssi']
+        ssi_tag = PLUGIN_RAW_TAGS['hparams/ssi']
         if ssi_tag not in self.get_raw_tags(HPARAMS, event_acc):
             return [], {}
         data = self.get_raw_events(HPARAMS, ssi_tag, event_acc)
@@ -547,10 +576,15 @@ class SummaryReader():
             all_events = cast(
                 Dict[str, List[Any]],
                 self.get_raw_events(event_type, None, event_acc))
+        # Filter tags
         if event_type == TENSORS:
-            # Ignore hparam tags (by TensorFlow): _hparams_/session_start_info
+            # Filter tags here also filter the corresponding events
+            filtered_tags: List[str] = []
+            for tag in PLUGIN_TAGS:
+                tags = self.get_raw_tags(tag, event_acc)
+                filtered_tags.extend(tags)
             self._tags[event_type] = \
-                list(filter(lambda x: x != HPARAMS_RAW_TAGS['ssi'],
+                list(filter(lambda x: x not in filtered_tags,
                             self._tags[event_type]))
         # Add columns that depend on event types
         get_row = {
@@ -558,9 +592,15 @@ class SummaryReader():
             TENSORS: self._get_tensor_row,
             HISTOGRAMS: self._get_histogram_row,
             HPARAMS: self._get_hparam_row,
+            TEXT: self._get_text_row,
         }[event_type]
         for tag in self._tags[event_type]:
             events = all_events[tag]
+            # Rename tags
+            if event_type == TEXT and tag.endswith(PLUGIN_RAW_TAGS[TEXT]):
+                # Remove tag suffix for torch & tensorboardX
+                tag = tag[:-len(PLUGIN_RAW_TAGS[TEXT])]
+            # Append row
             for e in events:
                 rows.append(get_row(tag, e))
         self._events[event_type] = pd.DataFrame(rows)
@@ -598,8 +638,8 @@ class SummaryReader():
         :param event_type: the event type to retrieve, None means return all, \
             defaults to None.
         :type event_type: {None, 'images', 'audio', 'histograms', 'scalars', \
-            'tensors', 'graph', 'meta_graph', 'run_metadata', 'hparams' \
-            }, optional
+            'tensors', 'graph', 'meta_graph', 'run_metadata', 'hparams', \
+            'texts'}, optional
         :raises ValueError: if `log_path` is a directory.
         :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
@@ -608,7 +648,7 @@ class SummaryReader():
         """
         if event_type not in {None, 'images', 'audio', 'histograms', 'scalars',
                               'tensors', 'graph', 'meta_graph',
-                              'run_metadata', 'hparams'}:
+                              'run_metadata', 'hparams', 'text'}:
             raise ValueError(f"Unknown event_type: {event_type}")
         if os.path.isdir(self.log_path):
             raise ValueError(f"Not an event file: {self.log_path}")
@@ -617,11 +657,12 @@ class SummaryReader():
                 self.log_path, STORE_EVERYTHING_SIZE_GUIDANCE)
             event_acc.Reload()
         tags = event_acc.Tags()
-        tags[HPARAMS] = []
-        # pylint: disable=W0212
-        if HPARAMS in event_acc._plugin_to_tag_to_content:
-            content = event_acc.PluginTagToContent(HPARAMS)
-            tags[HPARAMS] = list(content.keys())
+        for tag in PLUGIN_TAGS:
+            tags[tag] = []
+            # pylint: disable=W0212
+            if tag in event_acc._plugin_to_tag_to_content:
+                content = event_acc.PluginTagToContent(tag)
+                tags[tag] = list(content.keys())
         if event_type is None:
             return tags
         return tags[event_type]
@@ -678,6 +719,7 @@ class SummaryReader():
             TENSORS: event_acc.Tensors,
             HISTOGRAMS: event_acc.Histograms,
             HPARAMS: (lambda tag: event_acc.PluginTagToContent(HPARAMS)[tag]),
+            TEXT: event_acc.Tensors,
         }[event_type]
         if tag is not None:
             return get_events(tag)  # list of events
@@ -704,6 +746,7 @@ class SummaryReader():
             # META_GRAPH: [],
             # RUN_METADATA: [],
             HPARAMS: [],
+            TEXT: [],
         }
 
     def __repr__(self) -> str:
