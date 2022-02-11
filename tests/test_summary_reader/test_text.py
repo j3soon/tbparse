@@ -38,15 +38,15 @@ def test_tensorboardX(prepare, testdir):
     df_th = SummaryReader(log_dir_th).tensors
     df_tf = SummaryReader(log_dir_tbx).tensors
     assert df_th.equals(df_tf)
-    df_th = SummaryReader(log_dir_th).texts
-    df_tf = SummaryReader(log_dir_tbx).texts
+    df_th = SummaryReader(log_dir_th).text
+    df_tf = SummaryReader(log_dir_tbx).text
     assert df_th.equals(df_tf)
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
     df_tf = SummaryReader(log_dir_tbx, pivot=True).tensors
     assert df_th.equals(df_tf)
-    df_th = SummaryReader(log_dir_th, pivot=True).texts
-    df_tf = SummaryReader(log_dir_tbx, pivot=True).texts
+    df_th = SummaryReader(log_dir_th, pivot=True).text
+    df_tf = SummaryReader(log_dir_tbx, pivot=True).text
     assert df_th.equals(df_tf)
 
 def test_tensorflow(prepare, testdir):
@@ -65,8 +65,8 @@ def test_tensorflow(prepare, testdir):
     df_th = SummaryReader(log_dir_th).tensors
     df_tf = SummaryReader(log_dir_tf).tensors
     assert df_th.equals(df_tf)
-    df_th = SummaryReader(log_dir_th).texts
-    df_tf = SummaryReader(log_dir_tf).texts
+    df_th = SummaryReader(log_dir_th).text
+    df_tf = SummaryReader(log_dir_tf).text
     print(df_th)
     print(df_tf)
     assert df_th.equals(df_tf)
@@ -74,8 +74,8 @@ def test_tensorflow(prepare, testdir):
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
     assert df_th.equals(df_tf)
-    df_th = SummaryReader(log_dir_th, pivot=True).texts
-    df_tf = SummaryReader(log_dir_tf, pivot=True).texts
+    df_th = SummaryReader(log_dir_th, pivot=True).text
+    df_tf = SummaryReader(log_dir_tf, pivot=True).text
     assert df_th.equals(df_tf)
 
 def get_tmpdir_info(tmpdir):
@@ -134,22 +134,22 @@ def test_log_dir(prepare, testdir):
     reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
                            'dir_name', 'file_name'})
     assert len(reader.children) == 1
-    assert reader.texts.columns.to_list() == ['step', 'textA', 'textB', 'dir_name', 'file_name']
-    assert reader.texts['step'].to_list() == [0, 1]
-    assert reader.texts['textA'].to_list() == ["lorem ipsum", "dolor sit amet"]
-    assert reader.texts['textB'].to_list() == ["consectetur adipiscing", "elit"]
-    assert reader.texts['dir_name'].to_list() == [''] * 2
-    assert reader.texts['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
+    assert reader.text.columns.to_list() == ['step', 'textA', 'textB', 'dir_name', 'file_name']
+    assert reader.text['step'].to_list() == [0, 1]
+    assert reader.text['textA'].to_list() == ["lorem ipsum", "dolor sit amet"]
+    assert reader.text['textB'].to_list() == ["consectetur adipiscing", "elit"]
+    assert reader.text['dir_name'].to_list() == [''] * 2
+    assert reader.text['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
     check_others(reader)
     # Test default
     reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
                            'dir_name', 'file_name'})
-    assert reader.texts.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
-    print(reader.texts)
-    assert reader.texts['step'].to_list() == [0, 1] * 2
-    assert reader.texts['tag'].to_list() == ['textA'] * 2 + ['textB'] * 2
-    assert reader.texts['value'].to_list() == \
+    assert reader.text.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
+    print(reader.text)
+    assert reader.text['step'].to_list() == [0, 1] * 2
+    assert reader.text['tag'].to_list() == ['textA'] * 2 + ['textB'] * 2
+    assert reader.text['value'].to_list() == \
         ["lorem ipsum", "dolor sit amet", "consectetur adipiscing", "elit"]
-    assert reader.texts['dir_name'].to_list() == [''] * 4
-    assert reader.texts['file_name'].to_list() == [tmpinfo["event_filename"]] * 4
+    assert reader.text['dir_name'].to_list() == [''] * 4
+    assert reader.text['file_name'].to_list() == [tmpinfo["event_filename"]] * 4
     check_others(reader)

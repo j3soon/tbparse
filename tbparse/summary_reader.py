@@ -334,7 +334,7 @@ class SummaryReader():
         return self.get_events(HPARAMS)
 
     @property
-    def texts(self) -> pd.DataFrame:
+    def text(self) -> pd.DataFrame:
         """Construct a `pandas.DataFrame` that stores all text events
         under `log_path`. Some processing is performed when evaluating this \
         property. Therefore you may want to store the results and reuse it \
@@ -639,7 +639,7 @@ class SummaryReader():
             defaults to None.
         :type event_type: {None, 'images', 'audio', 'histograms', 'scalars', \
             'tensors', 'graph', 'meta_graph', 'run_metadata', 'hparams', \
-            'texts'}, optional
+            'text'}, optional
         :raises ValueError: if `log_path` is a directory.
         :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
