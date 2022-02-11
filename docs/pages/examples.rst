@@ -9,6 +9,7 @@ Minimum Examples
 * :ref:`tbparse_parsing-tensors`
 * :ref:`tbparse_parsing-histograms`
 * :ref:`tbparse_parsing-hparams`
+* :ref:`tbparse_parsing-text`
 
 Real World Examples
 ===================================
