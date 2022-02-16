@@ -237,3 +237,6 @@ def test_histogram_to_cdf():
     y = list(y * np.sum(counts))
     expected_y = [0., 0., 0., 0.1, 0.9, 1, 1+3*0.1, 1+3*0.9, 4., 4., 4.]
     assert y == expected_y
+
+# TODO: histogram doc -> df[...].apply(tensor_to_histogram_dict)
+# TODO: histogram test -> also use apply

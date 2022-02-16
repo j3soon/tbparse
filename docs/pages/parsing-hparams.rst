@@ -805,3 +805,5 @@ For hierarchical data, we can serialize other types into json string for later u
 
       .. WARNING:: TensorboardX automatically escapes special character ``=``, ``+`` in the
          specified tags.
+
+Alternatively, you can serialize the entire dictionary to json string and store it with ``Text`` events: :ref:`tbparse_parsing-text`.

@@ -10,16 +10,21 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorboard.plugins.hparams.plugin_data_pb2 import HParamsPluginData
 from tensorboard.backend.event_processing.event_accumulator import (
-    AUDIO, COMPRESSED_HISTOGRAMS, HISTOGRAMS, IMAGES, SCALARS,
-    STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, EventAccumulator, HistogramEvent,
+    AUDIO, COMPRESSED_HISTOGRAMS, HISTOGRAMS, IMAGES,
+    SCALARS, STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, AudioEvent,
+    EventAccumulator, HistogramEvent, ImageEvent,
     ScalarEvent, TensorEvent)
+from tensorboard.plugins.hparams.plugin_data_pb2 import HParamsPluginData
 
-# from tensorboard.backend.event_processing.event_accumulator import \
-#     EventAccumulator, IMAGES, AUDIO, HISTOGRAMS, SCALARS, \
-#     COMPRESSED_HISTOGRAMS, TENSORS, GRAPH, META_GRAPH, RUN_METADATA, \
-#     STORE_EVERYTHING_SIZE_GUIDANCE, HistogramEvent, ScalarEvent, TensorEvent
+# pylint: disable=W0105
+"""
+from tensorboard.backend.event_processing.event_accumulator import (
+    AUDIO, COMPRESSED_HISTOGRAMS, GRAPH, HISTOGRAMS, IMAGES, META_GRAPH,
+    RUN_METADATA, SCALARS, STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, AudioEvent,
+    CompressedHistogramEvent, EventAccumulator, HistogramEvent, ImageEvent,
+    ScalarEvent, TensorEvent)
+"""
 
 HPARAMS = 'hparams'
 TEXT = 'text'
@@ -40,11 +45,13 @@ MINIMUM_SIZE_GUIDANCE = {
     TENSORS: 1,
 }
 
-ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, HPARAMS, TEXT}
-ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max',
-                     'num', 'sum', 'sum_squares'}
+ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, IMAGES, AUDIO, HPARAMS, TEXT}
+ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max', 'num',
+                     'sum', 'sum_squares', 'width', 'height', 'content_type',
+                     'length_frames', 'sample_rate'}
 
 
+# pylint: disable=R0904
 class SummaryReader():
     """
     Creates a `SummaryReader` that reads all tensorboard events and summaries
@@ -71,17 +78,25 @@ class SummaryReader():
                 - file_name: add a column that contains the relative \
                              event file path.
                 - wall_time: add a column that stores the event timestamp.
-                - min (histogram): the min value.
-                - max (histogram): the max value.
-                - num (histogram): the number of values.
-                - sum (histogram): the sum of all values.
-                - sum_squares (histogram): the sum of squares for all values.
+                - min (histogram): the min value in the histogram.
+                - max (histogram): the max value in the histogram.
+                - num (histogram): the number of values in the histogram.
+                - sum (histogram): the sum of all values in the histogram.
+                - sum_squares (histogram): the sum of squares for all values \
+                                           in the histogram.
+                - width (image): the width of the image.
+                - height (image): the height of the image.
+                - content_type (audio): the content type of the audio.
+                - length_frames (audio): the length of the audio.
+                - sample_rate (audio): the sampling rate of the audio.
         :type extra_columns: Set[{'dir_name', 'file_name', 'wall_time', \
-                'min', 'max', 'num', 'sum', 'sum_squares'}]
+                'min', 'max', 'num', 'sum', 'sum_squares', 'width', 'height', \
+                'content_type', 'length_frames', 'sample_rate'}]
 
         :param event_types: Specifies the event types to parse, \
             defaults to all event types.
-        :type event_types: Set[{'scalars', 'tensors', 'histograms'}]
+        :type event_types: Set[{'scalars', 'tensors', 'histograms', 'images', \
+            'audio'}]
         """
         self._log_path: str = log_path
         """Load directory location, or load file location."""
@@ -161,8 +176,8 @@ class SummaryReader():
 
         :param event_type: the event type to retrieve, None means return all, \
         defaults to None.
-        :type event_type: {None, 'histograms', 'scalars', 'tensors', \
-            'hparams'}, optional
+        :type event_type: {None, 'scalars', 'tensors', 'histograms', \
+            'images', 'audio', 'hparams', 'text'}, optional
         :raises ValueError: if `event_type` is unknown.
         :return: A `['list', 'of', 'tags']` list, or a \
             `{eventType: ['list', 'of', 'tags']}` dictionary.
@@ -193,7 +208,6 @@ class SummaryReader():
     @staticmethod
     def _merge_values(s: pd.Series):
         """Merge multiple values. Ignore NaNs, concat others."""
-        # Note:
         # Does not support python3.6 since DataFrame does not fully support
         # `np.ndarray` as an element in cell. See the following:
         # lib/python3.6/site-packages/pandas/core/groupby/generic.py:482
@@ -225,7 +239,8 @@ class SummaryReader():
         property. Therefore you may want to store the results and reuse it \
         for better performance.
 
-        :type event_type: {'histograms', 'scalars', 'tensors', 'hparams'}.
+        :type event_type: {'scalars', 'tensors', 'histograms', 'images', \
+            'audio', 'hparams', 'text'}.
         :raises ValueError: if `event_type` is unknown.
         :return: A `DataFrame` storing all `event_type` events.
         :rtype: pandas.DataFrame
@@ -322,6 +337,30 @@ class SummaryReader():
         return self.get_events(HISTOGRAMS)
 
     @property
+    def images(self) -> pd.DataFrame:
+        """Construct a `pandas.DataFrame` that stores all images events under \
+        log_path`. Some processing is performed when evaluating this \
+        property. Therefore you may want to store the results and reuse it \
+        for better performance.
+
+        :return: A `DataFrame` storing all images events.
+        :rtype: pandas.DataFrame
+        """
+        return self.get_events(IMAGES)
+
+    @property
+    def audio(self) -> pd.DataFrame:
+        """Construct a `pandas.DataFrame` that stores all audio events under \
+        `log_path`. Some processing is performed when evaluating this \
+        property. Therefore you may want to store the results and reuse it \
+        for better performance.
+
+        :return: A `DataFrame` storing all audio events.
+        :rtype: pandas.DataFrame
+        """
+        return self.get_events(AUDIO)
+
+    @property
     def hparams(self) -> pd.DataFrame:
         """Construct a `pandas.DataFrame` that stores all hparams events
         under `log_path`. Some processing is performed when evaluating this \
@@ -346,21 +385,21 @@ class SummaryReader():
         return self.get_events(TEXT)
 
     @staticmethod
-    def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
+    def tensor_to_histogram(tensor: List[List[float]]) -> Dict[str, Any]:
         """Convert a list of buckets to histogram dictionary.
 
-        :param lst: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
+        :param tensor: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
         list. The range of the bucket is [lower, upper)
-        :type lst: List[List[float]]
+        :type tensor: List[List[float]]
         :return: A `{hist_data_name: hist_data}` dictionary.
         :rtype: Dict[str, Any]
         """
         limits = []
         counts = []
-        for e in lst:
+        for e in tensor:
             limits.append(e[0])
             counts.append(e[2])
-        limits.append(lst[-1][1])
+        limits.append(tensor[-1][1])
         assert len(limits) == len(counts) + 1
         d = {
             'limits': np.array(limits),
@@ -372,6 +411,49 @@ class SummaryReader():
             'sum_squares': np.nan,
         }
         return d
+
+    @staticmethod
+    def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
+        """Convert a list of buckets to histogram dictionary. \
+        (deprecated, use `tensor_to_histogram` instead)
+
+        :param lst: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
+        list. The range of the bucket is [lower, upper)
+        :type lst: List[List[float]]
+        :return: A `{hist_data_name: hist_data}` dictionary.
+        :rtype: Dict[str, Any]
+        """
+        return SummaryReader.tensor_to_histogram(lst)
+
+    @staticmethod
+    def tensor_to_image(tensor: List[Any]) -> np.ndarray:
+        """Convert a list of buckets to histogram dictionary.
+
+        :param tensor: A `['width', 'height', 'encoded image']` \
+        list.
+        :type tensor: List[Any]
+        :return: A numpy array.
+        :rtype: np.ndarray
+        """
+        image = tensor[2]
+        value = tf.image.decode_image(image).numpy()
+        return value
+
+    @staticmethod
+    def tensor_to_audio(tensor: List[Any]) -> np.ndarray:
+        """Convert a list of buckets to histogram dictionary.
+
+        :param tensor: A `['width', 'height', 'encoded image']` \
+        list.
+        :type tensor: List[Any]
+        :return: A numpy array.
+        :rtype: np.ndarray
+        """
+        audio_string = tensor[0][0]
+        audio, sample_rate = tf.audio.decode_wav(audio_string)
+        audio = audio.numpy()
+        sample_rate = sample_rate.numpy()
+        return audio
 
     @staticmethod
     def histogram_to_pdf(counts: np.ndarray, limits: np.ndarray,
@@ -501,6 +583,29 @@ class SummaryReader():
                 d[key] = v
         return self._add_extra_columns(d, e.wall_time)
 
+    def _get_image_row(self, tag: str, e: ImageEvent) -> Dict[str, Any]:
+        """Add entries in dictionary `d` based on the ImageEvent `e`"""
+        value = tf.image.decode_image(e.encoded_image_string).numpy()
+        d = {'step': e.step}
+        if self._pivot:
+            d[tag] = value
+        else:
+            d['tag'] = tag
+            d['value'] = value
+        return self._add_extra_columns(d, e.wall_time)
+
+    def _get_audio_row(self, tag: str, e: AudioEvent) -> Dict[str, Any]:
+        """Add entries in dictionary `d` based on the AudioEvent `e`"""
+        audio, _ = tf.audio.decode_wav(e.encoded_audio_string)
+        value = audio.numpy()
+        d = {'step': e.step}
+        if self._pivot:
+            d[tag] = value
+        else:
+            d['tag'] = tag
+            d['value'] = value
+        return self._add_extra_columns(d, e.wall_time)
+
     def _get_hparam_row(self, tag: str, value: Any) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the HParamsPluginData \
            `plugin_data`"""
@@ -591,6 +696,8 @@ class SummaryReader():
             SCALARS: self._get_scalar_row,
             TENSORS: self._get_tensor_row,
             HISTOGRAMS: self._get_histogram_row,
+            IMAGES: self._get_image_row,
+            AUDIO: self._get_audio_row,
             HPARAMS: self._get_hparam_row,
             TEXT: self._get_text_row,
         }[event_type]
@@ -718,6 +825,8 @@ class SummaryReader():
             SCALARS: event_acc.Scalars,
             TENSORS: event_acc.Tensors,
             HISTOGRAMS: event_acc.Histograms,
+            IMAGES: event_acc.Images,
+            AUDIO: event_acc.Audio,
             HPARAMS: (lambda tag: event_acc.PluginTagToContent(HPARAMS)[tag]),
             TEXT: event_acc.Tensors,
         }[event_type]
@@ -736,8 +845,8 @@ class SummaryReader():
         :rtype: Dict[str, Any]
         """
         return {
-            # IMAGES: [],
-            # AUDIO: [],
+            IMAGES: [],
+            AUDIO: [],
             HISTOGRAMS: copy.deepcopy(data),
             SCALARS: copy.deepcopy(data),
             # COMPRESSED_HISTOGRAMS: [],
