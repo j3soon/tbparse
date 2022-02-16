@@ -1,17 +1,14 @@
 import os
-import re
 import tempfile
 from typing import List
 
 import numpy as np
-import pandas as pd
 import pytest
 import tensorboardX
 import tensorflow as tf
-from numpy.testing import assert_almost_equal
 from tbparse import SummaryReader
-from tensorboard.backend.event_processing.event_accumulator import (
-    HistogramEvent, ScalarEvent)
+from tensorboard.backend.event_processing.event_accumulator import \
+    HistogramEvent
 from torch.utils.tensorboard import SummaryWriter
 
 RND_STATE = 1234

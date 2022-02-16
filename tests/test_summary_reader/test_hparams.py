@@ -1,5 +1,4 @@
 import os
-import re
 import tempfile
 from typing import List
 
