@@ -66,7 +66,6 @@ def test_tensorboardX(prepare, testdir):
 
 def test_tensorflow(prepare, testdir):
     # Prepare Log
-    log_dir_th = os.path.join(testdir.tmpdir, 'run')
     tmpdir_tf = tempfile.TemporaryDirectory()
     log_dir_tf = os.path.join(tmpdir_tf.name, 'run')
     img, img_HWC = get_images()
@@ -82,23 +81,38 @@ def test_tensorflow(prepare, testdir):
     img_HWC_uint8 = (img_HWC * 255.5).astype(np.uint8)
     # (pivot) Parse & Compare
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
-    df_tf['my_image'] = df_tf['my_image'].apply(SummaryReader.tensor_to_image)
-    df_tf['my_image_HWC'] = df_tf['my_image_HWC'].apply(SummaryReader.tensor_to_image)
-    assert df_tf.columns.to_list() == ['step', 'my_image', 'my_image_HWC']
+    image_dict_arr = df_tf['my_image'].apply(SummaryReader.tensor_to_image)
+    df_tf['my_image'] = image_dict_arr.apply(lambda x: x['image'])
+    df_tf['my_image/height'] = image_dict_arr.apply(lambda x: x['height'])
+    df_tf['my_image/width'] = image_dict_arr.apply(lambda x: x['width'])
+    image_dict_arr = df_tf['my_image_HWC'].apply(SummaryReader.tensor_to_image)
+    df_tf['my_image_HWC'] = image_dict_arr.apply(lambda x: x['image'])
+    df_tf['my_image_HWC/height'] = image_dict_arr.apply(lambda x: x['height'])
+    df_tf['my_image_HWC/width'] = image_dict_arr.apply(lambda x: x['width'])
+    assert df_tf.columns.to_list() == ['step', 'my_image', 'my_image_HWC', 'my_image/height', 'my_image/width', 'my_image_HWC/height', 'my_image_HWC/width']
     assert df_tf['step'].to_list() == [0]
     assert df_tf['my_image'][0].shape == img_T_uint8.shape
     assert df_tf['my_image'][0].tolist() == img_T_uint8.tolist()
     assert df_tf['my_image_HWC'][0].shape == img_HWC_uint8.shape
     assert df_tf['my_image_HWC'][0].tolist() == img_HWC_uint8.tolist()
+    assert df_tf['my_image/width'].to_list() == [100]
+    assert df_tf['my_image/height'].to_list() == [100]
+    assert df_tf['my_image_HWC/width'].to_list() == [100]
+    assert df_tf['my_image_HWC/height'].to_list() == [100]
     # (default) Parse & Compare
     df_tf = SummaryReader(log_dir_tf).tensors
-    df_tf['value'] = df_tf['value'].apply(SummaryReader.tensor_to_image)
-    assert df_tf.columns.to_list() == ['step', 'tag', 'value']
+    image_dict_arr = df_tf['value'].apply(SummaryReader.tensor_to_image)
+    df_tf['value'] = image_dict_arr.apply(lambda x: x['image'])
+    df_tf['height'] = image_dict_arr.apply(lambda x: x['height'])
+    df_tf['width'] = image_dict_arr.apply(lambda x: x['width'])
+    assert df_tf.columns.to_list() == ['step', 'tag', 'value', 'height', 'width']
     assert df_tf['step'].to_list() == [0] * 2
     assert df_tf['value'][0].shape == img_T_uint8.shape
     assert df_tf['value'][0].tolist() == img_T_uint8.tolist()
     assert df_tf['value'][1].shape == img_HWC_uint8.shape
     assert df_tf['value'][1].tolist() == img_HWC_uint8.tolist()
+    assert df_tf['width'].to_list() == [100] * 2
+    assert df_tf['height'].to_list() == [100] * 2
 
 def get_tmpdir_info(tmpdir):
     log_dir = os.path.join(tmpdir, 'run')
@@ -164,28 +178,63 @@ def test_log_dir(prepare, testdir):
     reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
                            'dir_name', 'file_name'})
     assert len(reader.children) == 1
-    assert reader.images.columns.to_list() == ['step', 'my_image', 'my_image_HWC', 'dir_name', 'file_name']
-    assert reader.images['step'].to_list() == [0]
-    assert reader.images['my_image'][0].shape == img_T_uint8.shape
-    assert reader.images['my_image'][0].tolist() == img_T_uint8.tolist()
-    assert reader.images['my_image_HWC'][0].shape == img_HWC_uint8.shape
-    assert reader.images['my_image_HWC'][0].tolist() == img_HWC_uint8.tolist()
-    assert reader.images['dir_name'].to_list() == ['']
-    assert reader.images['file_name'].to_list() == [tmpinfo["event_filename"]]
+    df = reader.images
+    assert df.columns.to_list() == ['step', 'my_image', 'my_image_HWC', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0]
+    assert df['my_image'][0].shape == img_T_uint8.shape
+    assert df['my_image'][0].tolist() == img_T_uint8.tolist()
+    assert df['my_image_HWC'][0].shape == img_HWC_uint8.shape
+    assert df['my_image_HWC'][0].tolist() == img_HWC_uint8.tolist()
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
     check_others(reader)
     # Test default
     reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
                            'dir_name', 'file_name'})
-    assert reader.images.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
-    assert reader.images['step'].to_list() == [0] * 2
-    assert reader.images['value'][0].shape == img_T_uint8.shape
-    assert reader.images['value'][0].tolist() == img_T_uint8.tolist()
-    assert reader.images['value'][1].shape == img_HWC_uint8.shape
-    assert reader.images['value'][1].tolist() == img_HWC_uint8.tolist()
-    assert reader.images['dir_name'].to_list() == [''] * 2
-    assert reader.images['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
+    df = reader.images
+    assert df.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0] * 2
+    assert df['tag'].to_list() == ['my_image', 'my_image_HWC']
+    assert df['value'][0].shape == img_T_uint8.shape
+    assert df['value'][0].tolist() == img_T_uint8.tolist()
+    assert df['value'][1].shape == img_HWC_uint8.shape
+    assert df['value'][1].tolist() == img_HWC_uint8.tolist()
+    assert df['dir_name'].to_list() == [''] * 2
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
     check_others(reader)
-    tf.image.convert_image_dtype
+    # Test pivot & all columns
+    reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
+                           'width', 'height', 'dir_name', 'file_name'})
+    df = reader.images
+    assert len(reader.children) == 1
+    assert df.columns.to_list() == ['step', 'my_image', 'my_image/height', 'my_image/width', 'my_image_HWC', 'my_image_HWC/height', 'my_image_HWC/width', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0]
+    assert df['my_image'][0].shape == img_T_uint8.shape
+    assert df['my_image'][0].tolist() == img_T_uint8.tolist()
+    assert df['my_image_HWC'][0].shape == img_HWC_uint8.shape
+    assert df['my_image_HWC'][0].tolist() == img_HWC_uint8.tolist()
+    assert df['my_image/width'].to_list() == [100]
+    assert df['my_image/height'].to_list() == [100]
+    assert df['my_image_HWC/width'].to_list() == [100]
+    assert df['my_image_HWC/height'].to_list() == [100]
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
+    check_others(reader)
+    # Test all columns
+    reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
+                           'width', 'height', 'dir_name', 'file_name'})
+    df = reader.images
+    assert df.columns.to_list() == ['step', 'tag', 'value', 'height', 'width', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0] * 2
+    assert df['tag'].to_list() == ['my_image', 'my_image_HWC']
+    assert df['value'][0].shape == img_T_uint8.shape
+    assert df['value'][0].tolist() == img_T_uint8.tolist()
+    assert df['value'][1].shape == img_HWC_uint8.shape
+    assert df['value'][1].tolist() == img_HWC_uint8.tolist()
+    assert df['width'].to_list() == [100] * 2
+    assert df['height'].to_list() == [100] * 2
+    assert df['dir_name'].to_list() == [''] * 2
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
+    check_others(reader)
 
 # TODO: tensorflow: multiple images (batch size > 1)
-# TODO: width, height as additional columns

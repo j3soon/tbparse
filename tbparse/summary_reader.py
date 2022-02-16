@@ -386,7 +386,7 @@ class SummaryReader():
 
     @staticmethod
     def tensor_to_histogram(tensor: List[List[float]]) -> Dict[str, Any]:
-        """Convert a list of buckets to histogram dictionary.
+        """Convert a tensor to histogram dictionary.
 
         :param tensor: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
         list. The range of the bucket is [lower, upper)
@@ -426,34 +426,41 @@ class SummaryReader():
         return SummaryReader.tensor_to_histogram(lst)
 
     @staticmethod
-    def tensor_to_image(tensor: List[Any]) -> np.ndarray:
-        """Convert a list of buckets to histogram dictionary.
+    def tensor_to_image(tensor: List[Any]) -> Dict[str, Any]:
+        """Convert a tensor to image dictionary.
 
-        :param tensor: A `['width', 'height', 'encoded image']` \
-        list.
+        :param tensor: A `['width', 'height', 'encoded image']` list.
         :type tensor: List[Any]
-        :return: A numpy array.
-        :rtype: np.ndarray
+        :return: A `{image_data_name: image_data}` dictionary.
+        :rtype: Dict[str, Any]
         """
-        image = tensor[2]
-        value = tf.image.decode_image(image).numpy()
-        return value
+        d = {
+            'image': tf.image.decode_image(tensor[2]).numpy(),
+            'width': int(tensor[0]),
+            'height': int(tensor[1]),
+        }
+        return d
 
     @staticmethod
-    def tensor_to_audio(tensor: List[Any]) -> np.ndarray:
-        """Convert a list of buckets to histogram dictionary.
+    def tensor_to_audio(tensor: List[Any]) -> Dict[str, Any]:
+        """Convert a audio to audio dictionary.
 
-        :param tensor: A `['width', 'height', 'encoded image']` \
-        list.
+        :param tensor: A `['encoded audio', b'']` list.
         :type tensor: List[Any]
-        :return: A numpy array.
-        :rtype: np.ndarray
+        :return: A `{audio_data_name: audio_data}` dictionary.
+        :rtype: Dict[str, Any]
         """
         audio_string = tensor[0][0]
         audio, sample_rate = tf.audio.decode_wav(audio_string)
         audio = audio.numpy()
         sample_rate = sample_rate.numpy()
-        return audio
+        d = {
+            'audio': audio,
+            'content_type': 'audio/wav',
+            'length_frames': audio.shape[0],
+            'sample_rate': sample_rate,
+        }
+        return d
 
     @staticmethod
     def histogram_to_pdf(counts: np.ndarray, limits: np.ndarray,
@@ -586,24 +593,43 @@ class SummaryReader():
     def _get_image_row(self, tag: str, e: ImageEvent) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the ImageEvent `e`"""
         value = tf.image.decode_image(e.encoded_image_string).numpy()
+        columns = {
+            'height': e.height,
+            'width': e.width,
+        }
+        # assert list(columns.keys()) == list(sorted(columns.keys()))
         d = {'step': e.step}
         if self._pivot:
             d[tag] = value
         else:
             d['tag'] = tag
             d['value'] = value
+        for k, v in columns.items():
+            if k in self._extra_columns:
+                key = k if not self._pivot else tag + '/' + k
+                d[key] = v
         return self._add_extra_columns(d, e.wall_time)
 
     def _get_audio_row(self, tag: str, e: AudioEvent) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the AudioEvent `e`"""
         audio, _ = tf.audio.decode_wav(e.encoded_audio_string)
         value = audio.numpy()
+        columns = {
+            'content_type': e.content_type,
+            'length_frames': e.length_frames,
+            'sample_rate': e.sample_rate,
+        }
+        # assert list(columns.keys()) == list(sorted(columns.keys()))
         d = {'step': e.step}
         if self._pivot:
             d[tag] = value
         else:
             d['tag'] = tag
             d['value'] = value
+        for k, v in columns.items():
+            if k in self._extra_columns:
+                key = k if not self._pivot else tag + '/' + k
+                d[key] = v
         return self._add_extra_columns(d, e.wall_time)
 
     def _get_hparam_row(self, tag: str, value: Any) -> Dict[str, Any]:

@@ -28,6 +28,7 @@ def get_audio():
     return x, rate
 
 def get_wave_compressed(tensor, sample_rate):
+    # Defined in the `audio` function in `torch/utils/tensorboard/summary.py`
     tensor = tensor.squeeze()
     tensor = (tensor * np.iinfo(np.int16).max).astype('<i2')
     fio = io.BytesIO()
@@ -44,6 +45,7 @@ def get_wave_compressed(tensor, sample_rate):
     return value, rate
 
 def get_soundfile_compressed(tensor, sample_rate):
+    # Defined in the `encode_wav` function in `tensorflow/python/ops/gen_audio_ops.py`
     with io.BytesIO() as fio:
         soundfile.write(fio, tensor, samplerate=sample_rate, format='wav')
         audio_string = fio.getvalue()
@@ -52,6 +54,7 @@ def get_soundfile_compressed(tensor, sample_rate):
     return value, rate
 
 def get_encode_wav_compressed(tensor, sample_rate):
+    # Defined in the `audio` function in `tensorboardX/summary.py`
     audio_string = encode_wav(tensor, sample_rate)
     audio, rate = tf.audio.decode_wav(audio_string)
     value = audio.numpy()
@@ -72,7 +75,6 @@ def prepare(testdir):
 def test_tensorboardX(prepare, testdir):
     # Note: tensorboardX automatically escapes special characters.
     # Prepare Log
-    log_dir_th = os.path.join(testdir.tmpdir, 'run')
     tmpdir_tbx = tempfile.TemporaryDirectory()
     log_dir_tbx = os.path.join(tmpdir_tbx.name, 'run')
     x, rate = get_audio()
@@ -96,7 +98,6 @@ def test_tensorboardX(prepare, testdir):
 
 def test_tensorflow(prepare, testdir):
     # Prepare Log
-    log_dir_th = os.path.join(testdir.tmpdir, 'run')
     tmpdir_tf = tempfile.TemporaryDirectory()
     log_dir_tf = os.path.join(tmpdir_tf.name, 'run')
     x, rate = get_audio()
@@ -110,14 +111,16 @@ def test_tensorflow(prepare, testdir):
     writer.close()
     # (default) Parse & Compare
     df_tf = SummaryReader(log_dir_tf).tensors
-    df_tf['value'] = df_tf['value'].apply(SummaryReader.tensor_to_audio)
+    audio_dict_arr = df_tf['value'].apply(SummaryReader.tensor_to_audio)
+    df_tf['value'] = audio_dict_arr.apply(lambda x: x['audio'])
     assert df_tf.columns.to_list() == ['step', 'tag', 'value']
     assert df_tf['step'].to_list() == [0]
     assert df_tf['tag'].to_list() == ['my_audio']
     assert df_tf['value'][0].tolist() == x_compressed.tolist()
     # (pivot) Parse & Compare
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
-    df_tf['my_audio'] = df_tf['my_audio'].apply(SummaryReader.tensor_to_audio)
+    audio_dict_arr = df_tf['my_audio'].apply(SummaryReader.tensor_to_audio)
+    df_tf['my_audio'] = audio_dict_arr.apply(lambda x: x['audio'])
     assert df_tf.columns.to_list() == ['step', 'my_audio']
     assert df_tf['step'].to_list() == [0]
     assert df_tf['my_audio'][0].tolist() == x_compressed.tolist()
@@ -172,26 +175,65 @@ def check_others(reader):
     assert len(reader.text) == 0
 
 def test_log_dir(prepare, testdir):
-    log_dir = os.path.join(testdir.tmpdir, 'run')
+    tmpinfo = get_tmpdir_info(testdir.tmpdir)
     x, rate = get_audio()
     x_compressed, rate_compressed = get_wave_compressed(x, rate)
     assert rate == rate_compressed
-    # (pivot) Parse & Compare
-    reader = SummaryReader(log_dir, pivot=True)
+    # Test pivot
+    reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
+                           'dir_name', 'file_name'})
+    assert len(reader.children) == 1
     df = reader.audio
-    assert df.columns.to_list() == ['step', 'my_audio']
+    assert df.columns.to_list() == ['step', 'my_audio', 'dir_name', 'file_name']
     assert df['step'].to_list() == [0]
     assert df['my_audio'][0].tolist() == x_compressed.tolist()
-    # (default) Parse & Compare
-    df_tbx = SummaryReader(log_dir).audio
-    assert df_tbx.columns.to_list() == ['step', 'tag', 'value']
-    assert df_tbx['step'].to_list() == [0]
-    assert df_tbx['tag'].to_list() == ['my_audio']
-    assert df_tbx['value'][0].tolist() == x_compressed.tolist()
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
+    check_others(reader)
+    # Test default
+    reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
+                           'dir_name', 'file_name'})
+    df = reader.audio
+    assert len(reader.children) == 1
+    assert df.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0]
+    assert df['tag'].to_list() == ['my_audio']
+    assert df['value'][0].tolist() == x_compressed.tolist()
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
+    check_others(reader)
+    # Test pivot & all columns
+    reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
+                           'content_type', 'length_frames', 'sample_rate', 'dir_name', 'file_name'})
+    assert len(reader.children) == 1
+    df = reader.audio
+    assert df.columns.to_list() == ['step', 'my_audio', 'my_audio/content_type', 'my_audio/length_frames', 'my_audio/sample_rate', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0]
+    assert df['my_audio'][0].tolist() == x_compressed.tolist()
+    assert df['my_audio/content_type'][0] == 'audio/wav'
+    assert df['my_audio/length_frames'][0] == x.shape[1]
+    assert df['my_audio/sample_rate'][0] == rate
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
+    check_others(reader)
+    # Test all columns
+    reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
+                           'content_type', 'length_frames', 'sample_rate', 'dir_name', 'file_name'})
+    df = reader.audio
+    assert len(reader.children) == 1
+    assert df.columns.to_list() == ['step', 'tag', 'value', 'content_type', 'length_frames', 'sample_rate', 'dir_name', 'file_name']
+    assert df['step'].to_list() == [0]
+    assert df['tag'].to_list() == ['my_audio']
+    assert df['value'][0].tolist() == x_compressed.tolist()
+    assert df['content_type'][0] == 'audio/wav'
+    assert df['length_frames'][0] == x.shape[1]
+    assert df['sample_rate'][0] == rate
+    assert df['dir_name'].to_list() == ['']
+    assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
+    check_others(reader)
 
 # TODO: tensorflow: multiple audio (batch size > 1)
 # TODO: multiple channels
-# TODO: content_type, length_frames, sample_rate as additional columns
 
 # TODO: tensor_to_audio: tensor[0][1]?
 # TODO: tensor_to_audio: tensor[1]?
