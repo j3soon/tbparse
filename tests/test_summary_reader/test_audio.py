@@ -45,7 +45,7 @@ def get_wave_compressed(tensor, sample_rate):
     return value, rate
 
 def get_soundfile_compressed(tensor, sample_rate):
-    # Defined in the `encode_wav` function in `tensorflow/python/ops/gen_audio_ops.py`
+    # Defined in the `audio` function in `tensorboardX/summary.py`
     with io.BytesIO() as fio:
         soundfile.write(fio, tensor, samplerate=sample_rate, format='wav')
         audio_string = fio.getvalue()
@@ -54,7 +54,7 @@ def get_soundfile_compressed(tensor, sample_rate):
     return value, rate
 
 def get_encode_wav_compressed(tensor, sample_rate):
-    # Defined in the `audio` function in `tensorboardX/summary.py`
+    # Defined in the `encode_wav` function in `tensorflow/python/ops/gen_audio_ops.py`
     audio_string = encode_wav(tensor, sample_rate)
     audio, rate = tf.audio.decode_wav(audio_string)
     value = audio.numpy()
@@ -229,9 +229,3 @@ def test_log_dir(prepare, testdir):
     assert df['dir_name'].to_list() == ['']
     assert df['file_name'].to_list() == [tmpinfo["event_filename"]]
     check_others(reader)
-
-# TODO: tensorflow: multiple audio (batch size > 1)
-# TODO: multiple channels
-
-# TODO: tensor_to_audio: tensor[0][1]?
-# TODO: tensor_to_audio: tensor[1]?

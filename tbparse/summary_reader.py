@@ -385,12 +385,12 @@ class SummaryReader():
         return self.get_events(TEXT)
 
     @staticmethod
-    def tensor_to_histogram(tensor: List[List[float]]) -> Dict[str, Any]:
+    def tensor_to_histogram(tensor: np.ndarray) -> Dict[str, Any]:
         """Convert a tensor to histogram dictionary.
 
         :param tensor: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
         list. The range of the bucket is [lower, upper)
-        :type tensor: List[List[float]]
+        :type tensor: np.ndarray
         :return: A `{hist_data_name: hist_data}` dictionary.
         :rtype: Dict[str, Any]
         """
@@ -413,24 +413,24 @@ class SummaryReader():
         return d
 
     @staticmethod
-    def buckets_to_histogram_dict(lst: List[List[float]]) -> Dict[str, Any]:
+    def buckets_to_histogram_dict(lst: np.ndarray) -> Dict[str, Any]:
         """Convert a list of buckets to histogram dictionary. \
         (deprecated, use `tensor_to_histogram` instead)
 
         :param lst: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
         list. The range of the bucket is [lower, upper)
-        :type lst: List[List[float]]
+        :type lst: np.ndarray
         :return: A `{hist_data_name: hist_data}` dictionary.
         :rtype: Dict[str, Any]
         """
         return SummaryReader.tensor_to_histogram(lst)
 
     @staticmethod
-    def tensor_to_image(tensor: List[Any]) -> Dict[str, Any]:
+    def tensor_to_image(tensor: np.ndarray) -> Dict[str, Any]:
         """Convert a tensor to image dictionary.
 
-        :param tensor: A `['width', 'height', 'encoded image']` list.
-        :type tensor: List[Any]
+        :param tensor: A `['width', 'height', 'encoded image', ...]` list.
+        :type tensor: np.ndarray
         :return: A `{image_data_name: image_data}` dictionary.
         :rtype: Dict[str, Any]
         """
@@ -447,22 +447,28 @@ class SummaryReader():
         return d
 
     @staticmethod
-    def tensor_to_audio(tensor: List[Any]) -> Dict[str, Any]:
+    def tensor_to_audio(tensor: np.ndarray) -> Dict[str, Any]:
         """Convert a audio to audio dictionary.
 
-        :param tensor: A `['encoded audio', b'']` list.
-        :type tensor: List[Any]
+        :param tensor: A `[['encoded audio', b''], ...]` list.
+        :type tensor: np.ndarray
         :return: A `{audio_data_name: audio_data}` dictionary.
         :rtype: Dict[str, Any]
         """
-        audio_string = tensor[0][0]
-        audio, sample_rate = tf.audio.decode_wav(audio_string)
-        audio = audio.numpy()
-        sample_rate = sample_rate.numpy()
+        assert tensor[:, 1].tolist() == [b''] * tensor.shape[0]
+        lst = list(map(tf.audio.decode_wav, tensor[:, 0]))
+        audio_lst = list(map(lambda x: x[0].numpy(), lst))
+        sample_rate_lst = list(map(lambda x: x[1].numpy(), lst))
+        audio = np.stack(audio_lst, axis=0)
+        sample_rate = np.stack(sample_rate_lst, axis=0)
+        length = audio.shape[1]
+        if audio.shape[0] == 1:
+            audio = audio.squeeze(axis=0)
+            sample_rate = sample_rate.squeeze(axis=0)
         d = {
             'audio': audio,
             'content_type': 'audio/wav',
-            'length_frames': audio.shape[0],
+            'length_frames': length,
             'sample_rate': sample_rate,
         }
         return d
