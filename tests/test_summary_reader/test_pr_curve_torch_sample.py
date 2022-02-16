@@ -18,14 +18,13 @@ def prepare(testdir):
     writer.add_pr_curve('pr_curve', labels, predictions, 0)
     writer.close()
 
+@pytest.mark.skip(reason="add_pr_curve is not supported yet")
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     reader = SummaryReader(log_dir, pivot=True)
     df = reader.tensors
-    print(df.columns)
-    print(df)
-    print(df.loc[0, 'pr_curve'])
     assert df.columns.tolist() == ['step', 'pr_curve']
     assert df.loc[0, 'step'] == 0
-    assert len(df.loc[0, 'pr_curve']) == 100
+    # 127 is defind in `pr_curve` function in `torch/utils/tensorboard/summary.py`
+    assert df.loc[0, 'pr_curve'].shape == (0, 127)
     assert False

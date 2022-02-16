@@ -33,6 +33,7 @@ def prepare(testdir):
     writer.add_mesh('my_mesh', vertices=vertices_tensor, colors=colors_tensor, faces=faces_tensor)
     writer.close()
 
+@pytest.mark.skip(reason="add_mesh is not supported yet")
 def test_log_dir(prepare, testdir):
     vertices_tensor = np.array([[
         [1, 1, 1],

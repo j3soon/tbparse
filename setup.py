@@ -41,7 +41,7 @@ setuptools.setup(
     extras_require={
         "testing": ["pytest", "mypy", "flake8", "pylint", "sphinx",
                     "sphinx-rtd-theme", "torch", "tensorboardX", "seaborn",
-                    "soundfile", "pytest-cov", "sphinx-tabs"],
+                    "torchvision", "soundfile", "pytest-cov", "sphinx-tabs"],
     },
 )
 

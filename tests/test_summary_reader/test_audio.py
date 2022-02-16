@@ -58,8 +58,6 @@ def get_encode_wav_compressed(tensor, sample_rate):
     audio_string = encode_wav(tensor, sample_rate)
     audio, rate = tf.audio.decode_wav(audio_string)
     value = audio.numpy()
-    print(value.shape)
-    print(rate)
     return value, rate
 
 @pytest.fixture

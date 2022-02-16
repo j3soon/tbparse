@@ -42,6 +42,7 @@ def prepare(testdir):
 
     tf.io.gfile = tf_io_gfile_backup
 
+@pytest.mark.skip(reason="add_embedding is not supported yet")
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     reader = SummaryReader(log_dir, pivot=True)

@@ -20,6 +20,7 @@ def prepare(testdir):
     writer.add_images('my_image_batch', img_batch, 0)
     writer.close()
 
+@pytest.mark.skip(reason="add_images is not supported yet")
 def test_log_dir(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
     reader = SummaryReader(log_dir, pivot=True)
