@@ -7,18 +7,24 @@
 tbparse documentation
 ===================================
 
-.. image:: https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml/badge.svg?branch=master&event=push
+.. image:: https://img.shields.io/pypi/v/tbparse
+   :target: https://pypi.org/project/tbparse/
+.. image:: https://img.shields.io/pypi/pyversions/tbparse
+   :target: https://pypi.org/project/tbparse/
+.. image:: https://pepy.tech/badge/tbparse
+   :target: https://pepy.tech/project/tbparse
+.. image:: https://img.shields.io/pypi/l/tbparse
+   :target: https://github.com/j3soon/tbparse/blob/master/LICENSE
+.. image:: https://img.shields.io/github/workflow/status/j3soon/tbparse/tests?label=tests
    :target: https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml
-.. image:: https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg
+.. image:: https://img.shields.io/github/workflow/status/j3soon/tbparse/build
    :target: https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml
 .. image:: https://readthedocs.org/projects/tbparse/badge/?version=latest
    :target: https://tbparse.readthedocs.io/en/latest/
 .. image:: https://codecov.io/gh/j3soon/tbparse/branch/master/graph/badge.svg?token=ASxeqFrMom
    :target: https://codecov.io/gh/j3soon/tbparse
-.. image:: https://img.shields.io/pypi/v/tbparse
-   :target: https://pypi.org/project/tbparse/
-.. image:: https://img.shields.io/pypi/pyversions/tbparse
-   :target: https://pypi.org/project/tbparse/
+.. image:: https://img.shields.io/github/stars/j3soon/tbparse?style=social
+   :target: https://github.com/j3soon/tbparse
 
 A simple yet powerful tensorboard event log parser/reader:
 

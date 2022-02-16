@@ -5,8 +5,8 @@
 [![Downloads](https://pepy.tech/badge/tbparse)](https://pepy.tech/project/tbparse)
 [![license](https://img.shields.io/pypi/l/tbparse)](https://github.com/j3soon/tbparse/blob/master/LICENSE)
 
-[![tests](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml/badge.svg?branch=master&event=push)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
-[![build](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
+[![tests](https://img.shields.io/github/workflow/status/j3soon/tbparse/tests?label=tests)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
+[![build](https://img.shields.io/github/workflow/status/j3soon/tbparse/build)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
 [![doc](https://readthedocs.org/projects/tbparse/badge/?version=latest)](https://tbparse.readthedocs.io/en/latest)
 [![codecov](https://codecov.io/gh/j3soon/tbparse/branch/master/graph/badge.svg?token=ASxeqFrMom)](https://codecov.io/gh/j3soon/tbparse)
 
