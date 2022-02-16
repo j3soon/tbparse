@@ -1,11 +1,14 @@
 # tbparse
 
+[![pypi](https://img.shields.io/pypi/v/tbparse)](https://pypi.org/project/tbparse/)
+[![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/)
+[![Downloads](https://pepy.tech/badge/tbparse)](https://pepy.tech/project/tbparse)
+[![license](https://img.shields.io/pypi/l/tbparse)](https://github.com/j3soon/tbparse/blob/master/LICENSE)
+
 [![tests](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml/badge.svg?branch=master&event=push)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
 [![build](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml/badge.svg)](https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml)
 [![doc](https://readthedocs.org/projects/tbparse/badge/?version=latest)](https://tbparse.readthedocs.io/en/latest)
 [![codecov](https://codecov.io/gh/j3soon/tbparse/branch/master/graph/badge.svg?token=ASxeqFrMom)](https://codecov.io/gh/j3soon/tbparse)
-[![pypi](https://img.shields.io/pypi/v/tbparse)](https://pypi.org/project/tbparse/)
-[![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/) [![Downloads](https://pepy.tech/badge/tbparse)](https://pepy.tech/project/tbparse)
 
 A simple yet powerful tensorboard event log parser/reader.
 

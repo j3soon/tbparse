@@ -59,6 +59,7 @@ def test_tensorboardX(prepare, testdir):
     df_tbx = SummaryReader(log_dir_tbx).images
     assert df_tbx.columns.to_list() == ['step', 'tag', 'value']
     assert df_tbx['step'].to_list() == [0] * 2
+    assert df_tbx['tag'].to_list() == ['my_image', 'my_image_HWC']
     assert df_tbx['value'][0].shape == img_T_uint8.shape
     assert df_tbx['value'][0].tolist() == img_T_uint8.tolist()
     assert df_tbx['value'][1].shape == img_HWC_uint8.shape
@@ -107,6 +108,7 @@ def test_tensorflow(prepare, testdir):
     df_tf['width'] = image_dict_arr.apply(lambda x: x['width'])
     assert df_tf.columns.to_list() == ['step', 'tag', 'value', 'height', 'width']
     assert df_tf['step'].to_list() == [0] * 2
+    assert df_tf['tag'].to_list() == ['my_image', 'my_image_HWC']
     assert df_tf['value'][0].shape == img_T_uint8.shape
     assert df_tf['value'][0].tolist() == img_T_uint8.tolist()
     assert df_tf['value'][1].shape == img_HWC_uint8.shape
@@ -236,5 +238,3 @@ def test_log_dir(prepare, testdir):
     assert df['dir_name'].to_list() == [''] * 2
     assert df['file_name'].to_list() == [tmpinfo["event_filename"]] * 2
     check_others(reader)
-
-# TODO: tensorflow: multiple images (batch size > 1)

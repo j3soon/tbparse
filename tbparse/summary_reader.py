@@ -434,8 +434,13 @@ class SummaryReader():
         :return: A `{image_data_name: image_data}` dictionary.
         :rtype: Dict[str, Any]
         """
+        lst = list(map(tf.image.decode_image, tensor[2:]))
+        lst = list(map(lambda x: x.numpy(), lst))
+        image = np.stack(lst, axis=0)
+        if image.shape[0] == 1:
+            image = image.squeeze(axis=0)
         d = {
-            'image': tf.image.decode_image(tensor[2]).numpy(),
+            'image': image,
             'width': int(tensor[0]),
             'height': int(tensor[1]),
         }
