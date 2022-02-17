@@ -49,15 +49,26 @@ def test_tensorflow(prepare, testdir):
         tf.summary.histogram('dist', x + i, i)
     writer.close()
     # Test pivot
-    df_th = SummaryReader(log_dir_th, pivot=True).histograms
+    df_th = SummaryReader(log_dir_th, pivot=True, extra_columns={'min', 'max', 'num', 'sum', 'sum_squares'}).histograms
     df_tf = SummaryReader(log_dir_tf, pivot=True).tensors
+    hist_dict_arr = df_tf['dist'].apply(SummaryReader.tensor_to_histogram)
+    df_tf['dist/counts'] = hist_dict_arr.apply(lambda x: x['counts'])
+    df_tf['dist/limits'] = hist_dict_arr.apply(lambda x: x['limits'])
+    df_tf['dist/max'] = hist_dict_arr.apply(lambda x: x['max'])
+    df_tf['dist/min'] = hist_dict_arr.apply(lambda x: x['min'])
+    df_tf['dist/num'] = hist_dict_arr.apply(lambda x: x['num'])
+    df_tf['dist/sum'] = hist_dict_arr.apply(lambda x: x['sum'])
+    df_tf['dist/sum_squares'] = hist_dict_arr.apply(lambda x: x['sum_squares'])
     for i in range(N_EVENTS):
-        hist_dict = SummaryReader.buckets_to_histogram_dict(df_tf['dist'][i])
-        assert len(hist_dict['counts']) + 1 == len(hist_dict['limits'])
-        assert sum(hist_dict['counts']) == N_PARTICLES
-    df_th.drop(columns=['dist/limits', 'dist/counts'], inplace=True)
+        assert len(df_tf['dist/counts'][i]) + 1 == len(df_tf['dist/limits'][i])
+        assert sum(df_tf['dist/counts'][i]) == N_PARTICLES
+        assert np.isscalar(df_tf['dist/min'][i])
+        assert np.isscalar(df_tf['dist/max'][i])
+        assert df_tf['dist/num'][i] == N_PARTICLES
+        assert np.isscalar(df_tf['dist/sum'][i])
+        assert np.isscalar(df_tf['dist/sum_squares'][i])
     df_tf.drop(columns=['dist'], inplace=True)
-    assert(df_th.equals(df_tf))
+    assert df_th.columns.to_list() == df_tf.columns.to_list()
 
 def test_tensorboardX(prepare, testdir):
     # Prepare Log
