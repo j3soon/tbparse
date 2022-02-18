@@ -1,6 +1,5 @@
 import os
 
-import pandas
 import pytest
 from tbparse import SummaryReader
 from torch.utils.tensorboard import SummaryWriter

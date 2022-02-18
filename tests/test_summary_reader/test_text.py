@@ -36,18 +36,18 @@ def test_tensorboardX(prepare, testdir):
     writer.close()
     # (default) Parse & Compare
     df_th = SummaryReader(log_dir_th).tensors
-    df_tf = SummaryReader(log_dir_tbx).tensors
-    assert df_th.equals(df_tf)
+    df_tbx = SummaryReader(log_dir_tbx).tensors
+    assert df_th.equals(df_tbx)
     df_th = SummaryReader(log_dir_th).text
-    df_tf = SummaryReader(log_dir_tbx).text
-    assert df_th.equals(df_tf)
+    df_tbx = SummaryReader(log_dir_tbx).text
+    assert df_th.equals(df_tbx)
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
-    df_tf = SummaryReader(log_dir_tbx, pivot=True).tensors
-    assert df_th.equals(df_tf)
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).tensors
+    assert df_th.equals(df_tbx)
     df_th = SummaryReader(log_dir_th, pivot=True).text
-    df_tf = SummaryReader(log_dir_tbx, pivot=True).text
-    assert df_th.equals(df_tf)
+    df_tbx = SummaryReader(log_dir_tbx, pivot=True).text
+    assert df_th.equals(df_tbx)
 
 def test_tensorflow(prepare, testdir):
     # Prepare Log
@@ -67,8 +67,6 @@ def test_tensorflow(prepare, testdir):
     assert df_th.equals(df_tf)
     df_th = SummaryReader(log_dir_th).text
     df_tf = SummaryReader(log_dir_tf).text
-    print(df_th)
-    print(df_tf)
     assert df_th.equals(df_tf)
     # (pivot) Parse & Compare
     df_th = SummaryReader(log_dir_th, pivot=True).tensors
@@ -129,7 +127,6 @@ def check_others(reader):
 
 def test_log_dir(prepare, testdir):
     tmpinfo = get_tmpdir_info(testdir.tmpdir)
-    tmpinfo = get_tmpdir_info(testdir.tmpdir)
     # Test pivot
     reader = SummaryReader(tmpinfo["log_dir"], pivot=True, extra_columns={
                            'dir_name', 'file_name'})
@@ -145,7 +142,6 @@ def test_log_dir(prepare, testdir):
     reader = SummaryReader(tmpinfo["log_dir"], extra_columns={
                            'dir_name', 'file_name'})
     assert reader.text.columns.to_list() == ['step', 'tag', 'value', 'dir_name', 'file_name']
-    print(reader.text)
     assert reader.text['step'].to_list() == [0, 1] * 2
     assert reader.text['tag'].to_list() == ['textA'] * 2 + ['textB'] * 2
     assert reader.text['value'].to_list() == \

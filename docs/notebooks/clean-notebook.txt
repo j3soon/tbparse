@@ -1,0 +1,5 @@
+# https://github.com/srstevenson/nb-clean
+nb-clean clean gallery-pytorch.ipynb
+# https://github.com/chrisjsewell/pytest-notebook
+pytest --nb-test-files --nb-force-regen *.ipynb
+# Check warning messages

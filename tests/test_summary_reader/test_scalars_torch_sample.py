@@ -1,16 +1,11 @@
 import os
-import re
 import tempfile
-from typing import List
 
 import numpy as np
 import pytest
 import tensorboardX
-import tensorflow as tf
 from numpy.testing import assert_almost_equal
 from tbparse import SummaryReader
-from tensorboard.backend.event_processing.event_accumulator import ScalarEvent
-from tests.test_summary_reader.test_histogram import N_EVENTS
 from torch.utils.tensorboard import SummaryWriter
 
 R = 5
@@ -28,6 +23,8 @@ def prepare(testdir):
                                         'xcosx':i*np.cos(i/R),
                                         'tanx': np.tan(i/R)}, i)
     writer.close()
+    # This call adds three values to the same scalar plot with the tag
+    # 'run_14h' in TensorBoard's scalar section.
     """
     run
     ├── events.out.tfevents.<id-1>

@@ -1,14 +1,11 @@
 import os
-import re
 import tempfile
 from typing import List
 
 import pytest
-import tensorboardX
 import tensorflow as tf
 from tbparse import SummaryReader
-from tensorboard.backend.event_processing.event_accumulator import (
-    ScalarEvent, TensorEvent)
+from tensorboard.backend.event_processing.event_accumulator import TensorEvent
 from torch.utils.tensorboard import SummaryWriter
 
 N_RUNS = 3

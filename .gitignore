@@ -138,6 +138,4 @@ dmypy.json
 cython_debug/
 
 # Custom ignores
-tests/test_writer_torch/*.png
-tests/test_writer_tf/*.png
-tests/test_writer_tensorboardX/*.png
+docs/notebooks/sample_run
