@@ -2,6 +2,21 @@
 Change Log
 ===================================
 
+v0.0.6
+===================================
+
+Features:
+
+* Support parsing ``images`` and ``audio``
+
+Fixes:
+
+* Unify ``histogram`` API (Breaking Change)
+
+Docs:
+
+* Add sample IPython notebook
+
 v0.0.5
 ===================================
 

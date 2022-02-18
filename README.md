@@ -41,7 +41,7 @@ print(df)
 
 For beginners, start from the page: [Parsing Scalars](https://tbparse.readthedocs.io/en/latest/pages/parsing-scalars.html).
 
-Currently, tbparse enables parsing native types (scalars, tensors, histograms, etc.) easily. More event types will be supported in future versions.
+## Gallery
 
 | Event Type | Tensorboard Dashboard                        | tbparse                                 |
 |------------|----------------------------------------------|-----------------------------------------|
