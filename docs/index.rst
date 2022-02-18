@@ -79,6 +79,7 @@ If you find this package useful, you can star or fork the repository on
    :maxdepth: 1
 
    pages/installation
+   pages/cheatsheet
 
 .. toctree::
    :caption: Usages
@@ -87,6 +88,8 @@ If you find this package useful, you can star or fork the repository on
    pages/parsing-scalars
    pages/parsing-tensors
    pages/parsing-histograms
+   pages/parsing-images
+   pages/parsing-audio
    pages/parsing-hparams
    pages/parsing-text
 

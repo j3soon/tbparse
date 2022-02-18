@@ -73,6 +73,7 @@ class SummaryReader():
         :type pivot: bool
 
         :param extra_columns: Specifies extra columns, defaults to `None`.
+
                 - dir_name:  add a column that contains the relative \
                              directory path.
                 - file_name: add a column that contains the relative \
