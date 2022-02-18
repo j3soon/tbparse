@@ -389,19 +389,16 @@ class SummaryReader():
     def tensor_to_histogram(tensor: np.ndarray) -> Dict[str, Any]:
         """Convert a tensor to histogram dictionary.
 
-        :param tensor: A `[['bucket lower', 'bucket upper', 'bucket count']]` \
+        :param tensor: A `[['left edge', 'right edge', 'count']]` \
         list. The range of the bucket is [lower, upper)
         :type tensor: np.ndarray
         :return: A `{hist_data_name: hist_data}` dictionary.
         :rtype: Dict[str, Any]
         """
-        limits = []
-        counts = []
-        for e in tensor:
-            limits.append(e[0])
-            counts.append(e[2])
-        limits.append(tensor[-1][1])
-        assert len(limits) == len(counts) + 1
+        limits = [tensor[0][0]] + list(map(lambda x: x[1], tensor))
+        counts = [0] + list(map(lambda x: x[2], tensor))
+        assert len(limits) == len(tensor) + 1
+        assert len(limits) == len(counts)
         d = {
             'limits': np.array(limits),
             'counts': np.array(counts),
@@ -482,9 +479,11 @@ class SummaryReader():
         of its `y` (probability density in bucket), given the bucket counts
         and limits.
 
-        :param counts: The number of values inside the buckets.
+        :param counts: The number of values inside the buckets. The first \
+            value must be zero.
         :type counts: np.ndarray
-        :param limits: The edges of the buckets.
+        :param limits: The (right) edges of the buckets. The first value is \
+            the left edge of the first bucket.
         :type limits: np.ndarray
         :param x: The input values of x.
         :type x: np.ndarray
@@ -504,16 +503,18 @@ class SummaryReader():
         its corresponding `y` (cumulative probability), given the bucket counts
         and limits.
 
-        :param counts: The number of values inside the buckets.
+        :param counts: The number of values inside the buckets. The first \
+            value must be zero.
         :type counts: np.ndarray
-        :param limits: The edges of the buckets.
+        :param limits: The (right) edges of the buckets. The first value is \
+            the left edge of the first bucket.
         :type limits: np.ndarray
         :param x: The input values of x coordinates.
         :type x: np.ndarray
         :return: `y`, the cumulative probability at values `x`.
         :rtype: np.ndarray
         """
-        assert len(counts) + 1 == len(limits)
+        assert len(counts) == len(limits)
         counts = np.array(counts)
         limits = np.array(limits)
         n = np.sum(counts)
@@ -522,7 +523,6 @@ class SummaryReader():
         assert np.all(np.diff(x) > 0)
 
         cumsum = np.cumsum(counts)
-        cumsum = np.insert(cumsum, 0, [0])
         assert len(cumsum) == len(limits)
 
         y: List[int] = []
@@ -552,6 +552,82 @@ class SummaryReader():
             i += 1
         return np.array(y) / n
 
+    # pylint: disable=R0914
+    @staticmethod
+    def histogram_to_bins(counts: np.ndarray, limits: np.ndarray,
+                          lower_bound: float = None, upper_bound: float = None,
+                          n_bins: int = 30):
+        """Returns the pair (`c`, `y`), which are the corresponding `c`
+        (bin center) and `y` (counts in bucket), given the bucket counts
+        and limits.
+
+        :param counts: The number of values inside the buckets. The first \
+            value must be zero.
+        :type counts: np.ndarray
+        :param limits: The (right) edges of the buckets. The first value is \
+            the left edge of the first bucket.
+        :type limits: np.ndarray
+        :param lower_bound: The left edge of the first bin.
+        :type lower_bound: float
+        :param upper_bound: The right edge of the last bin.
+        :type upper_bound: float
+        :param n_bins: The number of output bins.
+        :type n_bins: int
+        :return: The tuple containing the bin center and the counts in \
+            each bucket.
+        :rtype: Tuple[np.ndarray, np.ndarray]
+        """
+        # pylint: disable=C0301
+        # Ref: https://github.com/tensorflow/tensorboard/blob/master/tensorboard/plugins/histogram/tf_histogram_dashboard/histogramCore.ts#L83 # noqa: E501
+        assert len(counts) == len(limits)
+        assert counts[0] == 0
+        if lower_bound is None or upper_bound is None:
+            lower_bound = upper_bound = 0
+        if upper_bound == lower_bound:
+            # If the output range is 0 width, use a default non 0 range for
+            # visualization purpose.
+            upper_bound = lower_bound * 1.1 + 1
+            lower_bound = lower_bound / 1.1 - 1
+        # Terminology note: `buckets` are the input to this function,
+        # while _bins_ are our output.
+        bin_width = (upper_bound - lower_bound) / n_bins
+        bucket_idx = 1
+        centers = []
+        bins = []
+        for i in range(n_bins):
+            bin_left = lower_bound + i * bin_width
+            bin_right = bin_left + bin_width
+            # Take the count of each existing bucket, multiply it by the
+            # proportion of overlap with the new bin, then sum and store as the
+            # count for the new bin. If no overlap, will add to zero; if 100%
+            # overlap, will include the full count into new bin.
+            bin_y = 0
+            while bucket_idx < len(counts):
+                # Clip the right edge because right-most edge can be
+                # infinite-sized.
+                bucket_right = min(upper_bound, limits[bucket_idx])
+                bucket_left = max(lower_bound, limits[bucket_idx-1])
+                bucket_width = bucket_right - bucket_left
+                if bucket_width > 0:
+                    intersect = min(bucket_right, bin_right) \
+                        - max(bucket_left, bin_left)
+                    count = (intersect / (bucket_right - bucket_left)) \
+                        * counts[bucket_idx]
+                    bin_y += count if intersect > 0 else 0
+                else:
+                    is_final_bin = (bin_right >= upper_bound)
+                    single_value_overlap = \
+                        (bin_left <= bucket_left and
+                         ((bucket_right <= bin_right) if is_final_bin else
+                          (bucket_right < bin_right)))
+                    bin_y += counts[bucket_idx] if single_value_overlap else 0
+                if bucket_right > bin_right:
+                    break
+                bucket_idx += 1
+            centers.append(bin_left + bin_width / 2)
+            bins.append(bin_y)
+        return centers, bins
+
     def _get_scalar_row(self, tag: str, e: ScalarEvent) -> Dict[str, Any]:
         """Add entries in dictionary `d` based on the ScalarEvent `e`"""
         d = {'step': e.step}
@@ -580,7 +656,7 @@ class SummaryReader():
             Dict[str, Any]:
         """Add entries in dictionary `d` based on the HistogramEvent `e`"""
         hv = e.histogram_value
-        limits = np.array([hv.min] + hv.bucket_limit, dtype=np.float64)
+        limits = np.array(hv.bucket_limit, dtype=np.float64)
         counts = np.array(hv.bucket, dtype=np.float64)
         columns = {
             'counts': counts,

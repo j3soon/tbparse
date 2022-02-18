@@ -458,3 +458,160 @@ Plotting Multiple (Stacked) Distributions
          mpl.rcParams.update(mpl.rcParamsDefault)
 
 Reference: https://seaborn.pydata.org/examples/kde_ridgeplot.html
+
+Plotting Multiple (Stacked) Histograms
+---------------------------------------------
+
+.. tabs::
+
+   .. group-tab:: PyTorch
+
+      .. plot::
+         :context: close-figs
+
+         import seaborn as sns
+         import matplotlib.pyplot as plt
+         log_dir = tmpdirs['torch'].name
+         reader = SummaryReader(log_dir, pivot=True)
+         df = reader.histograms
+         # Set background
+         sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+         # Choose color palettes for the distributions
+         pal = sns.color_palette("Oranges", 20)[5:-5]
+         # Initialize the FacetGrid object (stacking multiple plots)
+         g = sns.FacetGrid(df, row='step', hue='step', aspect=15, height=.4, palette=pal)
+
+         def plot_subplots(x, color, label, data):
+           ax = plt.gca()
+           ax.text(0, .08, label, fontweight="bold", color=color,
+                   ha="left", va="center", transform=ax.transAxes)
+           counts = data['dist/counts'].iloc[0]
+           limits = data['dist/limits'].iloc[0]
+           x, y = SummaryReader.histogram_to_bins(counts, limits, limits[0], limits[-1], 15)
+           # Draw the densities in a few steps
+           sns.lineplot(x=x, y=y, clip_on=False, color="w", lw=2)
+           ax.fill_between(x, y, color=color)
+         # Plot each subplots with df[df['step']==i]
+         g.map_dataframe(plot_subplots, None)
+
+         # Add a bottom line for each subplot
+         # passing color=None to refline() uses the hue mapping
+         g.refline(y=0, linewidth=2, linestyle="-", color=None, clip_on=False)
+         # Set the subplots to overlap (i.e., height of each distribution)
+         g.figure.subplots_adjust(hspace=-.9)
+         # Remove axes details that don't play well with overlap
+         g.set_titles("")
+         g.set(yticks=[], xlabel="", ylabel="")
+         g.despine(bottom=True, left=True)
+
+      .. plot::
+         :context: close-figs
+         :include-source: false
+
+         # Reset to default matplotlib theme
+         import matplotlib as mpl
+         mpl.rcParams.update(mpl.rcParamsDefault)
+
+   .. group-tab:: TensorFlow2 / Keras
+
+      .. plot::
+         :context: close-figs
+
+         import seaborn as sns
+         import matplotlib.pyplot as plt
+         log_dir = tmpdirs['tensorflow'].name
+         reader = SummaryReader(log_dir, pivot=True)
+         df = reader.tensors
+         # Set background
+         sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+         # Choose color palettes for the distributions
+         pal = sns.color_palette("Oranges", 20)[5:-5]
+         # Initialize the FacetGrid object (stacking multiple plots)
+         g = sns.FacetGrid(df, row='step', hue='step', aspect=15, height=.4, palette=pal)
+
+         def plot_subplots(x, color, label, data):
+           ax = plt.gca()
+           ax.text(0, .08, label, fontweight="bold", color=color,
+                   ha="left", va="center", transform=ax.transAxes)
+           buckets = data['dist'].iloc[0]
+           hist_dict = SummaryReader.tensor_to_histogram(buckets)
+           counts = hist_dict['counts']
+           limits = hist_dict['limits']
+           x, y = SummaryReader.histogram_to_bins(counts, limits, limits[0], limits[-1], 15)
+           # Draw the densities in a few steps
+           sns.lineplot(x=x, y=y, clip_on=False, color="w", lw=2)
+           ax.fill_between(x, y, color=color)
+         # Plot each subplots with df[df['step']==i]
+         g.map_dataframe(plot_subplots, None)
+
+         # Add a bottom line for each subplot
+         # passing color=None to refline() uses the hue mapping
+         g.refline(y=0, linewidth=2, linestyle="-", color=None, clip_on=False)
+         # Set the subplots to overlap
+         # Set the subplots to overlap (i.e., height of each distribution)
+         g.figure.subplots_adjust(hspace=-.9)
+         # Remove axes details that don't play well with overlap
+         g.set_titles("")
+         g.set(yticks=[], xlabel="", ylabel="")
+         g.despine(bottom=True, left=True)
+
+      .. plot::
+         :context: close-figs
+         :include-source: false
+
+         # Reset to default matplotlib theme
+         import matplotlib as mpl
+         mpl.rcParams.update(mpl.rcParamsDefault)
+
+   .. group-tab:: TensorboardX
+
+      .. plot::
+         :context: close-figs
+
+         import seaborn as sns
+         import matplotlib.pyplot as plt
+         log_dir = tmpdirs['tensorboardX'].name
+         reader = SummaryReader(log_dir, pivot=True)
+         df = reader.histograms
+         # Set background
+         sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+         # Choose color palettes for the distributions
+         pal = sns.color_palette("Oranges", 20)[5:-5]
+         # Initialize the FacetGrid object (stacking multiple plots)
+         g = sns.FacetGrid(df, row='step', hue='step', aspect=15, height=.4, palette=pal)
+
+         def plot_subplots(x, color, label, data):
+           ax = plt.gca()
+           ax.text(0, .08, label, fontweight="bold", color=color,
+                   ha="left", va="center", transform=ax.transAxes)
+           counts = data['dist/counts'].iloc[0]
+           limits = data['dist/limits'].iloc[0]
+           x, y = SummaryReader.histogram_to_bins(counts, limits, limits[0], limits[-1], 15)
+           # Draw the densities in a few steps
+           sns.lineplot(x=x, y=y, clip_on=False, color="w", lw=2)
+           ax.fill_between(x, y, color=color)
+         # Plot each subplots with df[df['step']==i]
+         g.map_dataframe(plot_subplots, None)
+
+         # Add a bottom line for each subplot
+         # passing color=None to refline() uses the hue mapping
+         g.refline(y=0, linewidth=2, linestyle="-", color=None, clip_on=False)
+         # Set the subplots to overlap (i.e., height of each distribution)
+         g.figure.subplots_adjust(hspace=-.9)
+         # Remove axes details that don't play well with overlap
+         g.set_titles("")
+         g.set(yticks=[], xlabel="", ylabel="")
+         g.despine(bottom=True, left=True)
+
+      .. plot::
+         :context: close-figs
+         :include-source: false
+
+         # Reset to default matplotlib theme
+         import matplotlib as mpl
+         mpl.rcParams.update(mpl.rcParamsDefault)
+
+``SummaryReader.histogram_to_bins`` aims to reproduce the visualization in
+tensorboard dashboard.
+
+Reference: https://github.com/tensorflow/tensorboard/blob/master/tensorboard/plugins/histogram/tf_histogram_dashboard/histogramCore.ts#L83
