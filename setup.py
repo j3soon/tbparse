@@ -11,7 +11,7 @@ setuptools.setup(
     author="Johnson",
     author_email="j3.soon@msa.hinet.net",
     description="Load tensorboard event logs as pandas DataFrames; " + \
-    "Read, parse, and plot tensorboard event logs with ease!",
+        "Read, parse, and plot tensorboard event logs with ease!",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url=github_url,
@@ -29,6 +29,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -42,8 +43,7 @@ setuptools.setup(
     extras_require={
         "testing": ["pytest", "mypy", "flake8", "pylint", "sphinx",
                     "sphinx-rtd-theme", "torch", "tensorboardX", "seaborn",
-                    "torchvision", "soundfile", "pytest-cov", "sphinx-tabs", 
-                    "nbsphinx"],
+                    "soundfile", "pytest-cov", "sphinx-tabs", "nbsphinx"],
     },
 )
 

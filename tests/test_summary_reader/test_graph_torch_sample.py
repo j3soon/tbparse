@@ -6,7 +6,9 @@ import torch
 from PIL import Image
 from tbparse import SummaryReader
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import models, transforms
+# from torchvision import models, transforms
+# TODO: Add torchvision in setup.py and test-with-tox.yaml,
+# when torchvision supports Python 3.10
 
 
 @pytest.fixture
