@@ -93,6 +93,6 @@ python3 -m pytest --cov=./ --cov-report html
 
 tbparse is distributed under the [Apache License 2.0](LICENSE).
 
-The tbparse PyPI package depends upon (imports) the following third-party package. Each third-party software package is provided under its own license:
+The tbparse PyPI package depends on (imports) the following third-party package. Each third-party software package is provided under its own license:
 - [pandas](https://github.com/pandas-dev/pandas) is distributed under the [BSD-3-Clause License ](https://github.com/pandas-dev/pandas/blob/main/LICENSE)
 - [tensorboard](https://github.com/tensorflow/tensorboard) is distributed under the [Apache License 2.0](https://github.com/tensorflow/tensorboard/blob/master/LICENSE)
