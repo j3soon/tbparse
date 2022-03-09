@@ -74,23 +74,26 @@ If you find this package useful, you can star or fork the repository on
 
 .. _GitHub: https://github.com/j3soon/tbparse
 
-+------------+-----------------------------------------------+------------------------------------------+
-| Event Type | Tensorboard Dashboard                         | tbparse                                  |
-+============+===============================================+==========================================+
-| Scalars    | .. image:: images/tb-dashboard/scalars.png    | .. image:: images/tbparse/scalars.png    |
-+------------+-----------------------------------------------+------------------------------------------+
-| Tensors    | .. image:: images/tb-dashboard/tensors.png    | .. image:: images/tbparse/tensors.png    |
-+------------+-----------------------------------------------+------------------------------------------+
-| Histograms | .. image:: images/tb-dashboard/histograms.png | .. image:: images/tbparse/histograms.png |
-+------------+-----------------------------------------------+------------------------------------------+
-| Images     | .. image:: images/tb-dashboard/images.png     | .. image:: images/tbparse/images.png     |
-+------------+-----------------------------------------------+------------------------------------------+
-| Audio      | .. image:: images/tb-dashboard/audio.png      | .. image:: images/tbparse/audio.png      |
-+------------+-----------------------------------------------+------------------------------------------+
-| HParams    | .. image:: images/tb-dashboard/hparams.png    | .. image:: images/tbparse/hparams.png    |
-+------------+-----------------------------------------------+------------------------------------------+
-| Text       | .. image:: images/tb-dashboard/text.png       | .. image:: images/tbparse/text.png       |
-+------------+-----------------------------------------------+------------------------------------------+
+.. table::
+    :widths: 10 50 50
+
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | Event Type                                     | Tensorboard Dashboard                         | tbparse                                  |
+    +================================================+===============================================+==========================================+
+    | :ref:`Scalars <tbparse_parsing-scalars>`       | .. image:: images/tb-dashboard/scalars.png    | .. image:: images/tbparse/scalars.png    |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`Tensors <tbparse_parsing-tensors>`       | .. image:: images/tb-dashboard/tensors.png    | .. image:: images/tbparse/tensors.png    |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`Histograms <tbparse_parsing-histograms>` | .. image:: images/tb-dashboard/histograms.png | .. image:: images/tbparse/histograms.png |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`Images <tbparse_parsing-images>`         | .. image:: images/tb-dashboard/images.png     | .. image:: images/tbparse/images.png     |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`Audio <tbparse_parsing-audio>`           | .. image:: images/tb-dashboard/audio.png      | .. image:: images/tbparse/audio.png      |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`HParams <tbparse_parsing-hparams>`       | .. image:: images/tb-dashboard/hparams.png    | .. image:: images/tbparse/hparams.png    |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
+    | :ref:`Text <tbparse_parsing-text>`             | .. image:: images/tb-dashboard/text.png       | .. image:: images/tbparse/text.png       |
+    +------------------------------------------------+-----------------------------------------------+------------------------------------------+
 
 All events above are generated and plotted in the Gallery notebook in the ``Extras`` section.
 
