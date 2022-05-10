@@ -139,3 +139,4 @@ cython_debug/
 
 # Custom ignores
 docs/notebooks/sample_run
+profiling/benchmarks
