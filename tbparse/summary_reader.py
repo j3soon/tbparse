@@ -196,7 +196,7 @@ class SummaryReader():
         if event_type is not None:
             # Only collect the specified event type
             tags = {event_type: tags[event_type]}
-        for t in tags:
+        for t in list(tags.keys()):
             for c in self.children.values():
                 # Collect children's tags
                 tags[t] += c.get_tags(t)
@@ -929,7 +929,7 @@ class SummaryReader():
             if tag is not None:
                 raise ValueError("tag shouldn't be set if event_type is None")
             lst = self._make_empty_dict([])
-            for t in lst:
+            for t in list(lst.keys()):
                 # Collect events
                 events = self.get_raw_events(t, None, event_acc)
                 lst[t] = cast(Dict[str, List[Any]], events)
