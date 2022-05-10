@@ -215,9 +215,10 @@ class SummaryReader():
         # Python 3.6 EOL: 2021-12-23 (https://www.python.org/downloads/)
         try:
             assert isinstance(s, pd.Series)
-            x = list(s)
+            if len(s) == 1:
+                return s  # Return directly if no merging is needed
             lst = []
-            for xx in x:
+            for xx in s:
                 if isinstance(xx, list):
                     lst.extend(xx)
                 elif np.isscalar(xx):

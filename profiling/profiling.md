@@ -7,7 +7,7 @@ Hardware Stack:
 Software Stack:
 - pandas 1.3.3
 - tensorflow 2.6.0
-- tbparse 0.0.6
+- tbparse (master)
 
 ## Generate Benchmarks
 
@@ -34,12 +34,12 @@ Three runs:
 
 | Benchmark | Pivot | Extra Columns | Seconds |
 |-----------|-------|---------------|---------|
-|        01 | False |        (None) | (10.88, 10.90, 10.47) |
-|        01 |  True |        (None) | (23.67, 23.96, 23.07) |
-|        02 | False |        (None) | (10.47, 10.59, 10.65) |
-|        02 |  True |        (None) | (15.65, 15.60, 15.99) |
-|        03 | False |        (None) | (102.98, 103.95, 105.84) |
-|        03 |  True |        (None) | (184.05, 189.37, 189.57) |
+|        01 | False |        (None) | (10.56) |
+|        01 |  True |        (None) | (15.08) |
+|        02 | False |        (None) | (10.80) |
+|        02 |  True |        (None) | (13.95) |
+|        03 | False |        (None) | (103.12, 103.05, 103.32) |
+|        03 |  True |        (None) | (145.10, 145.49, 145.17) |
 
 ## Profiling Details
 
