@@ -45,13 +45,13 @@ For beginners, start from the page: [Parsing Scalars][parsing-scalars].
 
 | Event Type                       | Tensorboard Dashboard                        | tbparse                                 |
 |----------------------------------|----------------------------------------------|-----------------------------------------|
-| [Scalars][parsing-scalars]       | ![](docs/images/tb-dashboard/scalars.png)    | ![](docs/images/tbparse/scalars.png)    |
-| [Tensors][parsing-tensors]       | ![](docs/images/tb-dashboard/tensors.png)    | ![](docs/images/tbparse/tensors.png)    |
-| [Histograms][parsing-histograms] | ![](docs/images/tb-dashboard/histograms.png) | ![](docs/images/tbparse/histograms.png) |
-| [Images][parsing-images]         | ![](docs/images/tb-dashboard/images.png)     | ![](docs/images/tbparse/images.png)     |
-| [Audio][parsing-audio]           | ![](docs/images/tb-dashboard/audio.png)      | ![](docs/images/tbparse/audio.png)      |
-| [HParams][parsing-hparams]       | ![](docs/images/tb-dashboard/hparams.png)    | ![](docs/images/tbparse/hparams.png)    |
-| [Text][parsing-text]             | ![](docs/images/tb-dashboard/text.png)       | ![](docs/images/tbparse/text.png)       |
+| [Scalars][parsing-scalars]       | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/scalars.png)    | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/scalars.png)    |
+| [Tensors][parsing-tensors]       | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/tensors.png)    | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/tensors.png)    |
+| [Histograms][parsing-histograms] | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/histograms.png) | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/histograms.png) |
+| [Images][parsing-images]         | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/images.png)     | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/images.png)     |
+| [Audio][parsing-audio]           | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/audio.png)      | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/audio.png)      |
+| [HParams][parsing-hparams]       | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/hparams.png)    | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/hparams.png)    |
+| [Text][parsing-text]             | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tb-dashboard/text.png)       | ![](https://raw.githubusercontent.com/j3soon/tbparse/master/docs/images/tbparse/text.png)       |
 
 [parsing-scalars]: https://tbparse.readthedocs.io/en/latest/pages/parsing-scalars.html
 [parsing-tensors]: https://tbparse.readthedocs.io/en/latest/pages/parsing-tensors.html
@@ -61,7 +61,7 @@ For beginners, start from the page: [Parsing Scalars][parsing-scalars].
 [parsing-hparams]: https://tbparse.readthedocs.io/en/latest/pages/parsing-hparams.html
 [parsing-text]: https://tbparse.readthedocs.io/en/latest/pages/parsing-text.html
 
-All events above are generated and plotted in [gallery-pytorch.ipynb](docs/notebooks/gallery-pytorch.ipynb).
+All events above are generated and plotted in [gallery-pytorch.ipynb](https://github.com/j3soon/tbparse/blob/master/docs/notebooks/gallery-pytorch.ipynb).
 
 ## Installation
 
