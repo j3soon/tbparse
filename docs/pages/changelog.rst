@@ -2,6 +2,25 @@
 Change Log
 ===================================
 
+v0.0.7
+===================================
+
+Features:
+
+* Support parsing with reduced feature set without using the ``tensorflow`` package
+
+Fixes:
+
+* Fix the behavior of ``event_types`` for ``SummaryReader`` (Breaking Change)
+* Explicitly support Python 3.10 on PyPI
+* Fix preview images on PyPI
+
+Changes:
+
+* Add benchmarks and profiling results
+* Optimize ``_merge_values`` when no merging is required
+* Change row-oriented parsing to column-oriented parsing
+
 v0.0.6
 ===================================
 
