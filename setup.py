@@ -38,7 +38,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "pandas>=1.3.0",
-        "tensorflow>=2.0.0",
+        "tensorboard>=2.0.0",
     ],
     extras_require={
         "testing": ["pytest", "mypy", "flake8", "pylint", "sphinx",

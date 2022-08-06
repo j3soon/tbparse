@@ -7,16 +7,20 @@ summaries in a directory contains multiple event files, or a single event file.
 import copy
 import os
 from collections import defaultdict
+from types import ModuleType
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from tensorboard.backend.event_processing.event_accumulator import (
     AUDIO, COMPRESSED_HISTOGRAMS, HISTOGRAMS, IMAGES, SCALARS,
     STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, AudioEvent, EventAccumulator,
     HistogramEvent, ImageEvent, ScalarEvent, TensorEvent)
 from tensorboard.plugins.hparams.plugin_data_pb2 import HParamsPluginData
+try:
+    import tensorflow
+except ImportError:
+    tensorflow = None
 
 # pylint: disable=W0105
 """
@@ -47,6 +51,7 @@ MINIMUM_SIZE_GUIDANCE = {
 }
 
 ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, IMAGES, AUDIO, HPARAMS, TEXT}
+REDUCED_EVENT_TYPES = {SCALARS, HISTOGRAMS, HPARAMS}
 ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max', 'num',
                      'sum', 'sum_squares', 'width', 'height', 'content_type',
                      'length_frames', 'sample_rate'}
@@ -98,7 +103,7 @@ class SummaryReader():
         :param event_types: Specifies the event types to parse, \
             defaults to all event types.
         :type event_types: Set[{'scalars', 'tensors', 'histograms', 'images', \
-            'audio'}]
+            'audio', 'hparams', 'text'}]
         """
         self._log_path: str = log_path
         """Load directory location, or load file location."""
@@ -114,6 +119,8 @@ class SummaryReader():
         """Determines whether the DataFrame is stored in wide format."""
         self._event_types: Set[str] = (event_types or ALL_EVENT_TYPES).copy()
         """Specifies the event types to parse."""
+        if tensorflow is None:
+            self._event_types = (event_types or REDUCED_EVENT_TYPES).copy()
         if not isinstance(self._event_types, set):
             raise ValueError(f"`event_types` should be a {set} instead of \
                               {str(type(self._event_types))}")
@@ -148,7 +155,8 @@ class SummaryReader():
                 filepath = os.path.join(self.log_path, filename)
                 r = SummaryReader(filepath,
                                   pivot=self._pivot,
-                                  extra_columns=self._extra_columns)
+                                  extra_columns=self._extra_columns,
+                                  event_types=self._event_types)
                 self._children[filename] = r
 
     @property
@@ -250,6 +258,10 @@ class SummaryReader():
         """
         if event_type not in ALL_EVENT_TYPES:
             raise ValueError(f"Unknown event_type: {event_type}")
+        if event_type not in REDUCED_EVENT_TYPES and tensorflow is None:
+            self._get_tensorflow()  # raise error
+        if event_type not in self._event_types:
+            raise ValueError(f"event_type is ignored by user: {event_type}")
         group_columns: List[Any] = list(filter(
             lambda x: x in self._extra_columns, ['dir_name', 'file_name']))
         dfs = []
@@ -426,6 +438,13 @@ class SummaryReader():
         return SummaryReader.tensor_to_histogram(lst)
 
     @staticmethod
+    def _get_tensorflow() -> ModuleType:
+        if tensorflow is not None:
+            return tensorflow
+        raise ModuleNotFoundError("No module named 'tensorflow'. " +
+              "Please install 'tensorflow' or 'tensorflow-cpu'.")
+
+    @staticmethod
     def tensor_to_image(tensor: np.ndarray) -> Dict[str, Any]:
         """Convert a tensor to image dictionary.
 
@@ -434,6 +453,8 @@ class SummaryReader():
         :return: A `{image_data_name: image_data}` dictionary.
         :rtype: Dict[str, Any]
         """
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         lst = list(map(tf.image.decode_image, tensor[2:]))
         lst = list(map(lambda x: x.numpy(), lst))
         image = np.stack(lst, axis=0)
@@ -455,6 +476,8 @@ class SummaryReader():
         :return: A `{audio_data_name: audio_data}` dictionary.
         :rtype: Dict[str, Any]
         """
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         assert tensor[:, 1].tolist() == [b''] * tensor.shape[0]
         lst = list(map(tf.audio.decode_wav, tensor[:, 0]))
         audio_lst = list(map(lambda x: x[0].numpy(), lst))
@@ -650,6 +673,10 @@ class SummaryReader():
             Dict[str, List[Any]]:
         """Return a dict of lists based on the tags and TensorEvents."""
         cols = self._get_default_cols(tag_to_events)
+        if len(tag_to_events) == 0:
+            return cols
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
@@ -700,8 +727,11 @@ class SummaryReader():
     def _get_image_cols(self, tag_to_events: Dict[str, ImageEvent]) -> \
             Dict[str, List[Any]]:
         """Return a dict of lists based on the tags and ImageEvent."""
-
         cols = self._get_default_cols(tag_to_events)
+        if len(tag_to_events) == 0:
+            return cols
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
@@ -728,6 +758,10 @@ class SummaryReader():
             Dict[str, List[Any]]:
         """Return a dict of lists based on the tags and AudioEvent."""
         cols = self._get_default_cols(tag_to_events)
+        if len(tag_to_events) == 0:
+            return cols
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
@@ -770,6 +804,10 @@ class SummaryReader():
             Dict[str, List[Any]]:
         """Return a dict of lists based on the tags and TensorEvent."""
         cols = self._get_default_cols(tag_to_events)
+        if len(tag_to_events) == 0:
+            return cols
+        # pylint: disable=C0103
+        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
@@ -894,8 +932,9 @@ class SummaryReader():
 
     @property
     def raw_tags(self) -> Dict[str, List[str]]:
-        """Returns a dictionary containing a list of raw tags for each raw event type.
-        This property is only supported when `log_path` is a event file.
+        """Returns a dictionary containing a list of raw tags for each raw
+        event type. This property is only supported when `log_path` is a
+        event file.
 
         :return: A `{eventType: ['list', 'of', 'tags']}` dictionary.
         :rtype: Dict[str, List[str]]
@@ -1013,8 +1052,8 @@ class SummaryReader():
         :rtype: Dict[str, Any]
         """
         return {
-            IMAGES: [],
-            AUDIO: [],
+            IMAGES: copy.deepcopy(data),
+            AUDIO: copy.deepcopy(data),
             HISTOGRAMS: copy.deepcopy(data),
             SCALARS: copy.deepcopy(data),
             # COMPRESSED_HISTOGRAMS: [],
@@ -1022,8 +1061,8 @@ class SummaryReader():
             # GRAPH: [],
             # META_GRAPH: [],
             # RUN_METADATA: [],
-            HPARAMS: [],
-            TEXT: [],
+            HPARAMS: copy.deepcopy(data),
+            TEXT: copy.deepcopy(data),
         }
 
     def __repr__(self) -> str:

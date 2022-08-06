@@ -71,7 +71,8 @@ def test_event_types(prepare, testdir):
     event_file = os.path.join(run_dir, event_filename)
     # Test default
     reader = SummaryReader(event_file, event_types={'tensors'})
-    assert reader.scalars.columns.to_list() == []
+    with pytest.raises(ValueError):
+        reader.scalars
 
 def test_get_tags(prepare, testdir):
     log_dir = os.path.join(testdir.tmpdir, 'run')
