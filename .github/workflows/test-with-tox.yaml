@@ -35,19 +35,19 @@ jobs:
     - name: Test with tox
       run: tox
     - name: Prepare code coverage data
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == 3.9
+      if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
       run: |
         pip install pandas tensorflow torch tensorboardX pillow matplotlib soundfile pytest pytest-cov
-        pytest --doctest-glob="*.rst" --cov=./ --cov-report xml
+        pytest --doctest-glob="*.rst" --cov=./ --cov-report xml --ignore="tests/test_summary_reader/test_no_tensorflow.py"
     - name: Test documentation
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == 3.9
+      if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
       run: |
         sudo apt-get install -y pandoc
         pip install -r requirements.txt
         sphinx-build -b html docs docs/_build/html
         sphinx-build -b doctest docs docs/_build/doctest
     - name: Upload coverage to Codecov
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == 3.9
+      if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
       uses: codecov/codecov-action@v2
       with:
         fail_ci_if_error: true
