@@ -9,7 +9,7 @@ setuptools.setup(
     name="tbparse",
     version="0.0.7",
     author="Johnson",
-    author_email="admin@j3soon.com",
+    author_email="j3.soon777@gmail.com",
     description="Load tensorboard event logs as pandas DataFrames; " + \
         "Read, parse, and plot tensorboard event logs with ease!",
     long_description=long_description,
