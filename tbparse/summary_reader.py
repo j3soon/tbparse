@@ -178,7 +178,7 @@ class SummaryReader():
         """
         return cast(Dict[str, List[str]], self.get_tags())
 
-    def get_tags(self, event_type: str = None) -> \
+    def get_tags(self, event_type: Optional[str] = None) -> \
             Union[List[str], Dict[str, List[str]]]:
         """Returns a list of tag names for the specified event type. If
         `event_type` is None, return a dictionary containing a list of tag
@@ -580,7 +580,8 @@ class SummaryReader():
     # pylint: disable=R0914
     @staticmethod
     def histogram_to_bins(counts: np.ndarray, limits: np.ndarray,
-                          lower_bound: float = None, upper_bound: float = None,
+                          lower_bound: Optional[float] = None,
+                          upper_bound: Optional[float] = None,
                           n_bins: int = 30):
         """Returns the pair (`c`, `y`), which are the corresponding `c`
         (bin center) and `y` (counts in bucket), given the bucket counts
@@ -941,8 +942,8 @@ class SummaryReader():
         """
         return cast(Dict[str, List[str]], self.get_raw_tags())
 
-    def get_raw_tags(self, event_type: str = None,
-                     event_acc: EventAccumulator = None) -> \
+    def get_raw_tags(self, event_type: Optional[str] = None,
+                     event_acc: Optional[EventAccumulator] = None) -> \
             Union[List[str], Dict[str, List[str]]]:
         """Returns a list of raw tags for the specified raw event type. If
         `event_type` is None, return a dictionary containing a list of raw
@@ -992,8 +993,9 @@ class SummaryReader():
         """
         return cast(Dict[str, Dict[str, List[Any]]], self.get_raw_events())
 
-    def get_raw_events(self, event_type: str = None, tag: str = None,
-                       event_acc: EventAccumulator = None) -> \
+    def get_raw_events(self, event_type: Optional[str] = None,
+                       tag: Optional[str] = None,
+                       event_acc: Optional[EventAccumulator] = None) -> \
             Union[List[Any], Dict[str, List[Any]],
                   Dict[str, Dict[str, List[Any]]]]:
         """Returns a list of raw events for the specified raw event type. If
