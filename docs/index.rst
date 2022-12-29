@@ -15,9 +15,9 @@ tbparse documentation
    :target: https://pepy.tech/project/tbparse
 .. image:: https://img.shields.io/pypi/l/tbparse
    :target: https://github.com/j3soon/tbparse/blob/master/LICENSE
-.. image:: https://img.shields.io/github/workflow/status/j3soon/tbparse/tests?label=tests
+.. image:: https://img.shields.io/github/actions/workflow/status/j3soon/tbparse/test-with-tox.yaml?label=tests
    :target: https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml
-.. image:: https://img.shields.io/github/workflow/status/j3soon/tbparse/build
+.. image:: https://img.shields.io/github/actions/workflow/status/j3soon/tbparse/publish-to-pypi.yaml
    :target: https://github.com/j3soon/tbparse/actions/workflows/publish-to-pypi.yaml
 .. image:: https://readthedocs.org/projects/tbparse/badge/?version=latest
    :target: https://tbparse.readthedocs.io/en/latest/
@@ -25,6 +25,8 @@ tbparse documentation
    :target: https://codecov.io/gh/j3soon/tbparse
 .. image:: https://img.shields.io/github/stars/j3soon/tbparse?style=social
    :target: https://github.com/j3soon/tbparse
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+   :target: https://colab.research.google.com/github/j3soon/tbparse/blob/master/docs/notebooks/gallery-pytorch.ipynb
 
 A simple yet powerful tensorboard event log parser/reader:
 
