@@ -44,7 +44,13 @@ df = reader.scalars
 print(df)
 ```
 
-For beginners, start from the page: [Parsing Scalars][parsing-scalars].
+If you want an additional column with directory names (i.e., run names), change line 3 above to the following:
+
+```py
+reader = SummaryReader(log_dir, extra_columns={'dir_name'})
+```
+
+For further information, start from the page: [Parsing Scalars][parsing-scalars].
 
 ## Gallery
 
