@@ -275,7 +275,7 @@ class SummaryReader():
                 # iteratively prepend dir_name
                 if 'dir_name' in df and os.path.isdir(child.log_path):
                     dir_name = os.path.basename(child.log_path)
-                    df_cond = (df['dir_name'] == '')
+                    df_cond = df['dir_name'] == ''
                     df.loc[df_cond, 'dir_name'] = dir_name
                     df.loc[~df_cond, 'dir_name'] = \
                         dir_name + '/' + df.loc[~df_cond, 'dir_name']
@@ -641,7 +641,7 @@ class SummaryReader():
                         * counts[bucket_idx]
                     bin_y += count if intersect > 0 else 0
                 else:
-                    is_final_bin = (bin_right >= upper_bound)
+                    is_final_bin = bin_right >= upper_bound
                     single_value_overlap = \
                         (bin_left <= bucket_left and
                          ((bucket_right <= bin_right) if is_final_bin else
