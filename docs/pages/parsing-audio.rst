@@ -186,6 +186,11 @@ Load Event File / Run Directory
    returned results in a DataFrame as shown in the samples, instead of repeatedly
    accessing ``SummaryReader.images``.
 
+Extra Columns
+-----------------------------------
+
+See the :ref:`tbparse_extra-columns` page for more details.
+
 Plotting Events
 ===================================
 

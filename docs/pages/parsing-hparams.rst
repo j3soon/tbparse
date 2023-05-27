@@ -270,6 +270,11 @@ We further show different configurations of the :class:`tbparse.SummaryReader` c
    returned results in a DataFrame as shown in the samples, instead of repeatedly
    accessing ``SummaryReader.hparams``.
 
+Extra Columns
+-----------------------------------
+
+See the :ref:`tbparse_extra-columns` page for more details.
+
 Filtering Events Based on HParams
 ===================================
 

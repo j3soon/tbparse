@@ -145,3 +145,8 @@ Now we load the event logs as :class:`pandas.DataFrame`.
    each event file are collected internally. The best practice is to store the
    returned results in a DataFrame as shown in the samples, instead of repeatedly
    accessing ``SummaryReader.text``.
+
+Extra Columns
+-----------------------------------
+
+See the :ref:`tbparse_extra-columns` page for more details.

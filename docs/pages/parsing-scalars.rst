@@ -347,6 +347,8 @@ will collect all events stored inside them into the DataFrame.
 (The sample result here stays the same since we do not have
 multiple event files stored in our sample run directory.)
 
+.. _tbparse_load-log-directory:
+
 Load Log Directory
 -----------------------------------
 
@@ -514,6 +516,11 @@ We can further load all runs under the log directory.
    each event file are collected internally. The best practice is to store the
    returned results in a DataFrame as shown in the samples, instead of repeatedly
    accessing ``SummaryReader.scalars``.
+
+Extra Columns
+-----------------------------------
+
+See the :ref:`tbparse_extra-columns` page for more details.
 
 Plotting Events
 ===================================

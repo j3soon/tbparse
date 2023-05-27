@@ -119,6 +119,7 @@ All events above are generated and plotted in the Gallery notebook in the ``Extr
    pages/parsing-audio
    pages/parsing-hparams
    pages/parsing-text
+   pages/extra-columns
 
 .. toctree::
    :caption: Examples

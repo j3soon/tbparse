@@ -485,6 +485,11 @@ We can further load all runs under the log directory.
    returned results in a DataFrame as shown in the samples, instead of repeatedly
    accessing ``SummaryReader.tensors``.
 
+Extra Columns
+-----------------------------------
+
+See the :ref:`tbparse_extra-columns` page for more details.
+
 Plotting Events
 ===================================
 
