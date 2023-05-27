@@ -37,16 +37,12 @@ jobs:
     - name: Prepare code coverage data
       if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
       run: |
-        # For NumPy 1.24+ compatibility, see: https://github.com/pytorch/pytorch/pull/91517
-        pip install --pre torch==2.0.0.dev20230225 -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
         pip install pandas tensorflow torch tensorboardX pillow matplotlib soundfile pytest pytest-cov
         pytest --doctest-glob="*.rst" --cov=./ --cov-report xml --ignore="tests/test_summary_reader/test_no_tensorflow.py"
     - name: Test documentation
       if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
       run: |
         sudo apt-get install -y pandoc
-        # For NumPy 1.24+ compatibility, see: https://github.com/pytorch/pytorch/pull/91517
-        pip install --pre torch==2.0.0.dev20230225 -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
         pip install -r requirements.txt
         sphinx-build -b html docs docs/_build/html
         sphinx-build -b doctest docs docs/_build/doctest
