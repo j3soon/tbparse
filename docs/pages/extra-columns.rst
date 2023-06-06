@@ -4,7 +4,7 @@
 Extra Columns
 ===================================
 
-This page list out the available options for the `extra_columns` argument.
+This page describes the available options for the `extra_columns` argument.
 
 .. contents:: Table of Contents
     :depth: 2
@@ -30,7 +30,16 @@ Please refer to the python tests above.
 `wall_time`
 -----------------------------------
 
-Please refer to the python tests above.
+The `wall_time` (i.e. the time a clock on the wall would show) when the events are logged (e.g., when calling `add_scalar`).
+
+The timestamp is not human-readable. Therefore, you might want to convert the timestamp to a `datetime` compliant object, as follows:
+
+.. code::
+    from tbparse import SummaryReader
+    log_dir = "<PATH_TO_EVENT_FILE_OR_DIRECTORY>"
+    reader = SummaryReader(logdir, extra_columns={'wall_time'})
+    df = reader.scalars
+    df["wall_clock"] = pd.to_datetime(df.wall_time, unit="s")
 
 Histogram Events
 ===================================
