@@ -267,7 +267,7 @@ class SummaryReader():
         dfs = []
         if os.path.isfile(self.log_path):
             # Leaf node appends events directly
-            dfs.append(self._events[event_type])
+            dfs.append(self._events[event_type].copy())
         else:
             # Non-leaf node collects children's events
             for child in self._children.values():
