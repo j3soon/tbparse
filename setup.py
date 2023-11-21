@@ -7,7 +7,7 @@ github_url = "https://github.com/j3soon/tbparse"
 
 setuptools.setup(
     name="tbparse",
-    version="0.0.7",
+    version="0.0.8",
     author="Johnson",
     author_email="j3.soon777@gmail.com",
     description="Load tensorboard event logs as pandas DataFrames; " + \

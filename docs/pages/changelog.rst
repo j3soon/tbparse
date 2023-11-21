@@ -2,6 +2,15 @@
 Change Log
 ===================================
 
+v0.0.8
+===================================
+
+Fixes:
+
+* Fix explicit copy issue for Pandas 2.1.0 and later
+* Explicitly support Python 3.11 on PyPI
+* Fix shield badges on PyPI
+
 v0.0.7
 ===================================
 
