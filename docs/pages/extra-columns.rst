@@ -35,6 +35,7 @@ The `wall_time` (i.e. the time a clock on the wall would show) when the events a
 The timestamp is not human-readable. Therefore, you might want to convert the timestamp to a `datetime` compliant object, as follows:
 
 .. code::
+
     from tbparse import SummaryReader
     log_dir = "<PATH_TO_EVENT_FILE_OR_DIRECTORY>"
     reader = SummaryReader(logdir, extra_columns={'wall_time'})
