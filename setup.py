@@ -40,9 +40,11 @@ setuptools.setup(
         "pandas>=1.3.0",
         "tensorboard>=2.0.0",
     ],
+    # The following error occurs if tensorboardX>2.6
+    #    ImportError: cannot import name 'builder' from 'google.protobuf.internal'
     extras_require={
         "testing": ["pytest", "mypy", "flake8", "pylint", "sphinx",
-                    "sphinx-rtd-theme", "torch", "tensorboardX", "seaborn",
+                    "sphinx-rtd-theme", "torch", "tensorboardX==2.6", "seaborn",
                     "soundfile", "pytest-cov", "sphinx-tabs", "nbsphinx"],
     },
 )
