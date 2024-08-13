@@ -849,7 +849,7 @@ class SummaryReader():
         length = 0
         for events in tag_to_events.values():
             length += len(events)
-        cols: Dict[str, Any] = defaultdict(lambda: [np.NaN] * length)
+        cols: Dict[str, Any] = defaultdict(lambda: [np.nan] * length)
         if 'dir_name' in self._extra_columns:
             cols['dir_name'] = [''] * length
         if 'file_name' in self._extra_columns:
