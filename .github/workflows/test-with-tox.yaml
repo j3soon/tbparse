@@ -53,6 +53,7 @@ jobs:
         sphinx-build -b doctest docs docs/_build/doctest
     - name: Upload coverage to Codecov
       if: matrix.platform == 'ubuntu-22.04' && matrix.python-version == 3.9
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v4
       with:
         fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
