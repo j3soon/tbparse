@@ -19,6 +19,11 @@ jobs:
           - windows-2019
           - windows-2022  # windows-latest
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          - platform: ubuntu-24.04
+            python-version: 3.7
+          - platform: macos-14
+            python-version: 3.7
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
