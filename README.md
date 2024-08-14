@@ -2,7 +2,7 @@
 
 [![pypi](https://img.shields.io/pypi/v/tbparse)](https://pypi.org/project/tbparse/)
 [![python](https://img.shields.io/pypi/pyversions/tbparse)](https://pypi.org/project/tbparse/)
-[![Downloads](https://pepy.tech/badge/tbparse)](https://pepy.tech/project/tbparse)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/tbparse)](https://pypistats.org/packages/tbparse)
 [![license](https://img.shields.io/pypi/l/tbparse)](https://github.com/j3soon/tbparse/blob/master/LICENSE)
 
 [![tests](https://img.shields.io/github/actions/workflow/status/j3soon/tbparse/test-with-tox.yaml?label=tests)](https://github.com/j3soon/tbparse/actions/workflows/test-with-tox.yaml)
