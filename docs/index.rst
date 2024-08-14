@@ -11,8 +11,8 @@ tbparse documentation
    :target: https://pypi.org/project/tbparse/
 .. image:: https://img.shields.io/pypi/pyversions/tbparse
    :target: https://pypi.org/project/tbparse/
-.. image:: https://pepy.tech/badge/tbparse
-   :target: https://pepy.tech/project/tbparse
+.. image:: https://img.shields.io/pypi/dm/tbparse
+   :target: https://pypistats.org/packages/tbparse
 .. image:: https://img.shields.io/pypi/l/tbparse
    :target: https://github.com/j3soon/tbparse/blob/master/LICENSE
 .. image:: https://img.shields.io/github/actions/workflow/status/j3soon/tbparse/test-with-tox.yaml?label=tests
