@@ -54,6 +54,11 @@ def make_ndarray(tensor):
         # of the fp16: we need to reinterpret this as a proper float16
         values = np.fromiter(tensor.half_val, dtype=np.uint16)
         values.dtype = dtype
+    # Note:
+    # Does not support python3.7 since TensorBoard don't have the
+    # following types before 2.12.0, which requires at least python3.8.
+    # (https://github.com/tensorflow/tensorboard/blob/master/RELEASE.md#release-2120)
+    # Python 3.7 EOL: 2023-06-27. (https://devguide.python.org/versions/#versions)
     # TODO: The following is a temporary fix for float8_e5m2 and float8_e4m3fn
     # Ref: https://github.com/tensorflow/tensorboard/issues/6899
     elif tensor_dtype in [
