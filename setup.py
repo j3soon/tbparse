@@ -26,7 +26,6 @@ setuptools.setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,10 +36,10 @@ setuptools.setup(
     ],
     package_dir={"": "."},
     packages=setuptools.find_packages(where=".", exclude=("tests*",)),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
         "pandas>=1.3.0",
-        "tensorboard>=2.0.0",
+        "tensorboard>=2.12.0",
     ],
     # The following error occurs if tensorboardX>2.6
     #    ImportError: cannot import name 'builder' from 'google.protobuf.internal'

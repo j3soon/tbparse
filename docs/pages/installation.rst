@@ -11,7 +11,7 @@ Install from PyPI:
 .. code-block:: bash
 
    pip install tensorflow # optional, only required if you want to parse images and audio
-   pip install -U tbparse # requires Python >= 3.7
+   pip install -U tbparse # requires Python >= 3.8
 
 **Note**: For details on when TensorFlow is required, see :ref:`Installing without TensorFlow <tbparse_installing-without-tensorflow>`.
 
@@ -22,7 +22,7 @@ Install from Source:
    git clone https://github.com/j3soon/tbparse
    cd tbparse
    pip install tensorflow # optional, only required if you want to parse images and audio
-   pip install -e . # requires Python >= 3.7
+   pip install -e . # requires Python >= 3.8
 
 .. _tbparse_installing-without-tensorflow:
 
@@ -34,7 +34,7 @@ You can install tbparse with reduced feature set if you don't want to install Te
 .. code-block:: bash
 
    # Don't install TensorFlow
-   pip install -U tbparse # requires Python >= 3.7
+   pip install -U tbparse # requires Python >= 3.8
 
 Without TensorFlow, tbparse supports parsing
 :ref:`scalars <tbparse_parsing-scalars>`,

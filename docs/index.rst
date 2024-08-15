@@ -54,7 +54,7 @@ Installation:
 
 .. code-block:: bash
 
-   pip install -U tbparse # requires Python >= 3.7
+   pip install -U tbparse # requires Python >= 3.8
 
 We suggest using an additional virtual environment for parsing and plotting
 the tensorboard events. So no worries if your training code uses Python 3.6
