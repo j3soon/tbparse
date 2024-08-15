@@ -26,13 +26,10 @@ A simple yet powerful tensorboard event log parser/reader.
 Installation:
 
 ```sh
-pip install tensorflow # or tensorflow-cpu
 pip install -U tbparse # requires Python >= 3.7
 ```
 
-**Note**: If you don't want to install TensorFlow, see [Installing without TensorFlow](https://tbparse.readthedocs.io/en/latest/pages/installation.html#installing-without-tensorflow).
-
-We suggest using an additional virtual environment for parsing and plotting the tensorboard events. So no worries if your training code uses Python 3.6 or older versions. 
+We suggest using an additional virtual environment for parsing and plotting the tensorboard events. So no worries if your training code uses Python 3.6 or older versions.
 
 Reading one or more event files with tbparse only requires 5 lines of code:
 
@@ -77,11 +74,11 @@ All events above are generated and plotted in [gallery-pytorch.ipynb](https://gi
 ## Installation
 
 ```sh
-pip install tensorflow # or tensorflow-cpu
+pip install tensorflow # optional, only required if you want to parse images and audio
 pip install -U tbparse # requires Python >= 3.7
 ```
 
-**Note**: If you don't want to install TensorFlow, see [Installing without TensorFlow](https://tbparse.readthedocs.io/en/latest/pages/installation.html#installing-without-tensorflow).
+**Note**: For details on when TensorFlow is required, see [Installing without TensorFlow](https://tbparse.readthedocs.io/en/latest/pages/installation.html#installing-without-tensorflow).
 
 ## Testing the Source Code
 

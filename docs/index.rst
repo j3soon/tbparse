@@ -54,10 +54,7 @@ Installation:
 
 .. code-block:: bash
 
-   pip install tensorflow # or tensorflow-cpu
    pip install -U tbparse # requires Python >= 3.7
-
-**Note**: If you don't want to install TensorFlow, see :ref:`Installing without TensorFlow <tbparse_installing-without-tensorflow>`.
 
 We suggest using an additional virtual environment for parsing and plotting
 the tensorboard events. So no worries if your training code uses Python 3.6

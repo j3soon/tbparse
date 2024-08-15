@@ -17,6 +17,9 @@ from tensorboard.backend.event_processing.event_accumulator import (
     STORE_EVERYTHING_SIZE_GUIDANCE, TENSORS, AudioEvent, EventAccumulator,
     HistogramEvent, ImageEvent, ScalarEvent, TensorEvent)
 from tensorboard.plugins.hparams.plugin_data_pb2 import HParamsPluginData
+
+from .tensorflow_stub import make_ndarray
+
 try:
     import tensorflow
 except ImportError:
@@ -51,7 +54,7 @@ MINIMUM_SIZE_GUIDANCE = {
 }
 
 ALL_EVENT_TYPES = {SCALARS, TENSORS, HISTOGRAMS, IMAGES, AUDIO, HPARAMS, TEXT}
-REDUCED_EVENT_TYPES = {SCALARS, HISTOGRAMS, HPARAMS}
+REDUCED_EVENT_TYPES = ALL_EVENT_TYPES.difference({IMAGES, AUDIO})
 ALL_EXTRA_COLUMNS = {'dir_name', 'file_name', 'wall_time', 'min', 'max', 'num',
                      'sum', 'sum_squares', 'width', 'height', 'content_type',
                      'length_frames', 'sample_rate'}
@@ -577,7 +580,6 @@ class SummaryReader():
             i += 1
         return np.array(y) / n
 
-    # pylint: disable=R0914
     @staticmethod
     def histogram_to_bins(counts: np.ndarray, limits: np.ndarray,
                           lower_bound: Optional[float] = None,
@@ -603,8 +605,9 @@ class SummaryReader():
             each bucket.
         :rtype: Tuple[np.ndarray, np.ndarray]
         """
+        # pylint: disable=R0914
         # pylint: disable=C0301
-        # Ref: https://github.com/tensorflow/tensorboard/blob/master/tensorboard/plugins/histogram/tf_histogram_dashboard/histogramCore.ts#L83 # noqa: E501
+        # Ref: https://github.com/tensorflow/tensorboard/blob/master/tensorboard/plugins/histogram/tf_histogram_dashboard/histogramCore.ts#L83  # noqa: E501
         assert len(counts) == len(limits)
         assert counts[0] == 0
         if lower_bound is None or upper_bound is None:
@@ -676,12 +679,10 @@ class SummaryReader():
         cols = self._get_default_cols(tag_to_events)
         if len(tag_to_events) == 0:
             return cols
-        # pylint: disable=C0103
-        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
-                value = tf.make_ndarray(e.tensor_proto)
+                value = make_ndarray(e.tensor_proto)
                 if value.shape == ():
                     # Tensorflow histogram may have more than one items
                     value = value.item()
@@ -807,12 +808,10 @@ class SummaryReader():
         cols = self._get_default_cols(tag_to_events)
         if len(tag_to_events) == 0:
             return cols
-        # pylint: disable=C0103
-        tf = SummaryReader._get_tensorflow()
         idx = 0
         for tag, events in tag_to_events.items():
             for e in events:
-                value = tf.make_ndarray(e.tensor_proto).item()
+                value = make_ndarray(e.tensor_proto).item()
                 assert isinstance(value, bytes)
                 value = value.decode('utf-8')
                 cols['step'][idx] = e.step

@@ -10,10 +10,10 @@ Install from PyPI:
 
 .. code-block:: bash
 
-   pip install tensorflow # or tensorflow-cpu
+   pip install tensorflow # optional, only required if you want to parse images and audio
    pip install -U tbparse # requires Python >= 3.7
 
-**Note**: If you don't want to install TensorFlow, see :ref:`Installing without TensorFlow <tbparse_installing-without-tensorflow>`.
+**Note**: For details on when TensorFlow is required, see :ref:`Installing without TensorFlow <tbparse_installing-without-tensorflow>`.
 
 Install from Source:
 
@@ -21,7 +21,7 @@ Install from Source:
 
    git clone https://github.com/j3soon/tbparse
    cd tbparse
-   pip install tensorflow # or tensorflow-cpu
+   pip install tensorflow # optional, only required if you want to parse images and audio
    pip install -e . # requires Python >= 3.7
 
 .. _tbparse_installing-without-tensorflow:
@@ -38,13 +38,13 @@ You can install tbparse with reduced feature set if you don't want to install Te
 
 Without TensorFlow, tbparse supports parsing
 :ref:`scalars <tbparse_parsing-scalars>`,
-:ref:`histograms <tbparse_parsing-histograms>`, and
-:ref:`hparams <tbparse_parsing-hparams>`,
-but doesn't support parsing
 :ref:`tensors <tbparse_parsing-tensors>`,
-:ref:`images <tbparse_parsing-images>`,
-:ref:`audio <tbparse_parsing-audio>`, and
+:ref:`histograms <tbparse_parsing-histograms>`,
+:ref:`hparams <tbparse_parsing-hparams>`, and
 :ref:`text <tbparse_parsing-text>`.
+but doesn't support parsing
+:ref:`images <tbparse_parsing-images>` and
+:ref:`audio <tbparse_parsing-audio>`.
 
 tbparse will instruct you to install TensorFlow by raising an error if you try to parse the unsupported event types, such as:
 
