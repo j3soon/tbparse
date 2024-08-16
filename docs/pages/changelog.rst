@@ -2,6 +2,19 @@
 Change Log
 ===================================
 
+v0.0.9
+===================================
+
+Features:
+
+* Support parsing ``tensors`` and ``text`` without the ``tensorflow`` package
+* Support NumPy 2.0
+* Explicitly support Python 3.12 on PyPI
+
+Breaking Changes:
+
+* Drops support for Python 3.7
+
 v0.0.8
 ===================================
 
