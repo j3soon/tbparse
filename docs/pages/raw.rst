@@ -77,6 +77,9 @@ general cases. The `source code <https://github.com/tensorflow/tensorboard/blob/
 of the data acess API parses everything on the tensorboard.dev server,
 so it's not possible to modify it for offline use.
 
+**Note**: tensorboard.dev has been `shutdown <https://tensorboard.dev/>`_
+as of January 1, 2024.
+
 Related Tools
 ===================================
 
